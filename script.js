@@ -213,11 +213,55 @@ function disableAllLetterButtons() {
   buttons.forEach(btn => btn.disabled = true);
 }
 
-// Tworzenie przycisków dla liter A-Z
+// Funkcja mieszająca elementy tablicy
+function shuffleArray(array) {
+  let currentIndex = array.length, temporaryValue, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+  return array;
+}
+
+// Tworzenie przycisków dla liter - tylko te występujące w słowie + 7 losowych liter z rozszerzonego alfabetu
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
-  const alphabet = "abcdefghijklmnopqrstuvwxyz";
-  for (let letter of alphabet) {
+  
+  // Rozszerzony alfabet z polskimi znakami (wszystkie litery małe)
+  const extendedAlphabet = "abcdefghijklmnopqrstuvwxyząćęłńóśźż";
+  
+  // Zbiór liter występujących w słowie (tylko litery, pomijamy np. spacje czy znaki interpunkcyjne)
+  const correctSet = new Set();
+  for (let char of word) {
+    if (/[a-ząćęłńóśźż]/i.test(char)) {
+      correctSet.add(char.toLowerCase());
+    }
+  }
+  const correctLetters = Array.from(correctSet);
+  
+  // Zbiór liter, które mogą być dodatkowymi opcjami (wszystkie z alfabetu, ale usunięte te już w słowie)
+  let remainingLetters = [];
+  for (let char of extendedAlphabet) {
+    if (!correctSet.has(char)) {
+      remainingLetters.push(char);
+    }
+  }
+  // Losowo mieszamy pozostałe litery
+  remainingLetters = shuffleArray(remainingLetters);
+  
+  // Wybieramy do 7 losowych liter jako dystraktory
+  const distractorCount = Math.min(7, remainingLetters.length);
+  const distractorLetters = remainingLetters.slice(0, distractorCount);
+  
+  // Łączymy litery z słowa oraz dystraktory
+  const availableLetters = correctLetters.concat(distractorLetters);
+  const shuffledAvailableLetters = shuffleArray(availableLetters);
+  
+  // Tworzymy przyciski dla każdej litery z dostępnego zestawu
+  for (let letter of shuffledAvailableLetters) {
     const btn = document.createElement("button");
     btn.textContent = letter;
     btn.className = "letter-btn";
@@ -240,7 +284,6 @@ function revealHint() {
 
 // Obsługa kliknięcia przycisku podpowiedzi
 function handleHintClick() {
-  // Jeżeli są jeszcze nieodkryte litery, wywołujemy reklamę Rewarded Ad
   if (displayedWord.includes("_")) {
     showRewardedAd(() => {
       revealHint();
@@ -299,7 +342,7 @@ async function initGame() {
   
   displayedWord = [];
   for (let char of word) {
-    if (char.match(/[a-z]/i)) {
+    if (/[a-ząćęłńóśźż]/i.test(char)) {
       displayedWord.push("_");
     } else {
       displayedWord.push(char);
