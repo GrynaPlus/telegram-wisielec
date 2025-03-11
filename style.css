@@ -41,6 +41,13 @@ body {
   font-size: 18px;
 }
 
+/* Nowy styl dla wyświetlania poziomu */
+#level-display {
+  font-size: 16px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
 #hangman-container {
   margin-bottom: 20px;
   min-height: 120px;
