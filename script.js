@@ -81,6 +81,7 @@ const lettersContainerEl = document.getElementById("letters-container");
 const messageEl = document.getElementById("message");
 const restartBtn = document.getElementById("restart-btn");
 const hintBtn = document.getElementById("hint-btn");
+const levelDisplayEl = document.getElementById("level-display");
 
 // Elementy do ustawiania nazwy użytkownika
 const usernameInputEl = document.getElementById("username-input");
@@ -99,6 +100,12 @@ if (localStorage.getItem("currentLevel")) {
 } else {
   currentLevel = 1;
 }
+
+// Funkcja aktualizująca wyświetlanie poziomu
+function updateLevelDisplay() {
+  levelDisplayEl.textContent = "Poziom: " + currentLevel;
+}
+updateLevelDisplay();
 
 // Ustawienie nazwy użytkownika
 setUsernameBtn.addEventListener("click", function() {
@@ -270,6 +277,7 @@ async function nextLevel() {
     currentLevel++;
     localStorage.setItem("currentLevel", currentLevel);
     messageEl.textContent = "Przechodzisz do poziomu " + currentLevel + "...";
+    updateLevelDisplay();
     setTimeout(() => {
       initGame();
     }, 1500);
