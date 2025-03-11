@@ -11,6 +11,14 @@
 <body>
   <div id="game-container">
     <h1>Wisielec</h1>
+    
+    <!-- Ustawianie nazwy użytkownika -->
+    <div id="username-container">
+      <input type="text" id="username-input" placeholder="Wpisz swoją nazwę">
+      <button id="set-username-btn">Ustaw nazwę</button>
+    </div>
+    <div id="username-display"></div>
+    
     <div id="hangman-container">
       <pre id="hangman-drawing"></pre>
     </div>
@@ -20,8 +28,11 @@
     <div id="letters-container">
       <!-- Przyciski z literami A-Z -->
     </div>
+    <div id="controls">
+      <button id="hint-btn">Podpowiedź (Reklama)</button>
+      <button id="restart-btn">Restart</button>
+    </div>
     <div id="message"></div>
-    <button id="restart-btn">Restart</button>
   </div>
   
   <script src="script.js"></script>
