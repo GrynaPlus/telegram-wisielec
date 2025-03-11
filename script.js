@@ -4,6 +4,8 @@ let displayedWord = [];
 let wrongGuesses = 0;
 const maxWrong = 6;
 let userName = "";
+let currentLevel = 1;
+const maxLevel = 10;
 
 // Etapy rysowania wisielca (od 0 do 6 błędnych prób)
 const hangmanStages = [
@@ -84,12 +86,27 @@ const hintBtn = document.getElementById("hint-btn");
 const usernameInputEl = document.getElementById("username-input");
 const setUsernameBtn = document.getElementById("set-username-btn");
 const usernameDisplayEl = document.getElementById("username-display");
+const usernameContainerEl = document.getElementById("username-container");
+
+// Sprawdzenie, czy nazwa i poziom są zapisane w localStorage
+if (localStorage.getItem("userName")) {
+  userName = localStorage.getItem("userName");
+  usernameDisplayEl.textContent = "Witaj, " + userName + "!";
+  usernameContainerEl.style.display = "none";
+}
+if (localStorage.getItem("currentLevel")) {
+  currentLevel = parseInt(localStorage.getItem("currentLevel"));
+} else {
+  currentLevel = 1;
+}
 
 // Ustawienie nazwy użytkownika
 setUsernameBtn.addEventListener("click", function() {
   userName = usernameInputEl.value.trim();
   if (userName !== "") {
+    localStorage.setItem("userName", userName);
     usernameDisplayEl.textContent = "Witaj, " + userName + "!";
+    usernameContainerEl.style.display = "none";
   }
 });
 
@@ -108,8 +125,8 @@ async function loadWords() {
   }
 }
 
-// Wybór losowego słowa z danego poziomu (domyślnie poziom 1)
-function chooseRandomWord(levels, chosenLevel = 1) {
+// Wybór losowego słowa z danego poziomu
+function chooseRandomWord(levels, chosenLevel) {
   const levelObj = levels.find(l => l.level === chosenLevel);
   if (!levelObj || levelObj.words.length === 0) {
     return "";
@@ -161,7 +178,10 @@ function checkWin() {
   if (!displayedWord.includes("_")) {
     messageEl.textContent = "Gratulacje, " + (userName || "graczu") + "! Wygrałeś!";
     disableAllLetterButtons();
-    // Możesz tu wysłać wynik do bota Telegram, np. przy użyciu tg.sendData()
+    // Po krótkim czasie przechodzimy do kolejnego poziomu
+    setTimeout(() => {
+      nextLevel();
+    }, 2000);
   }
 }
 
@@ -172,6 +192,10 @@ function checkLoss() {
     // Pokaż reklamę In-App Interstitial, a następnie komunikat o przegranej
     showInterstitialAd(() => {
       messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
+      // Po krótkim czasie restartujemy poziom (bez zmiany poziomu)
+      setTimeout(() => {
+        initGame();
+      }, 2000);
     });
   }
 }
@@ -201,10 +225,10 @@ function revealHint() {
     if (displayedWord[i] === "_") {
       displayedWord[i] = word[i];
       updateDisplayedWord();
-      checkWin();
       break;
     }
   }
+  checkWin();
 }
 
 // Obsługa kliknięcia przycisku podpowiedzi
@@ -240,6 +264,21 @@ function showRewardedAd(callback) {
   }, 3000); // symulacja 3 sekund
 }
 
+// Funkcja przechodząca do kolejnego poziomu
+async function nextLevel() {
+  if (currentLevel < maxLevel) {
+    currentLevel++;
+    localStorage.setItem("currentLevel", currentLevel);
+    messageEl.textContent = "Przechodzisz do poziomu " + currentLevel + "...";
+    setTimeout(() => {
+      initGame();
+    }, 1500);
+  } else {
+    messageEl.textContent = "Brawo! Ukończyłeś wszystkie poziomy!";
+    // Opcjonalnie można zresetować poziom lub zaoferować restart gry
+  }
+}
+
 // Inicjalizacja gry
 async function initGame() {
   wrongGuesses = 0;
@@ -247,8 +286,8 @@ async function initGame() {
   updateHangmanDrawing();
 
   const levels = await loadWords();
-  word = chooseRandomWord(levels, 1);
-  console.log("Wybrane słowo:", word);
+  word = chooseRandomWord(levels, currentLevel);
+  console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
   
   displayedWord = [];
   for (let char of word) {
