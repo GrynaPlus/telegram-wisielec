@@ -225,7 +225,7 @@ function shuffleArray(array) {
   return array;
 }
 
-// Tworzenie przycisków dla liter - tylko te występujące w słowie + 7 losowych liter z rozszerzonego alfabetu
+// Tworzenie przycisków dla liter - tylko te występujące w słowie + 3 losowe litery z rozszerzonego alfabetu
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
   
@@ -250,14 +250,14 @@ function createLetterButtons() {
   }
   remainingLetters = shuffleArray(remainingLetters);
   
-  // Wybieramy do 7 losowych liter jako dystraktory
-  const distractorCount = Math.min(7, remainingLetters.length);
+  // Wybieramy do 3 losowych liter jako dystraktory
+  const distractorCount = Math.min(3, remainingLetters.length);
   const distractorLetters = remainingLetters.slice(0, distractorCount);
   
   // Łączymy litery ze słowa oraz dystraktory i mieszamy
   const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
   
-  // Tworzymy przyciski
+  // Tworzymy przyciski dla każdej litery
   for (let letter of availableLetters) {
     const btn = document.createElement("button");
     btn.textContent = letter;
