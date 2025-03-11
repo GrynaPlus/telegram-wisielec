@@ -79,7 +79,6 @@ const hangmanDrawingEl = document.getElementById("hangman-drawing");
 const wordContainerEl = document.getElementById("word-container");
 const lettersContainerEl = document.getElementById("letters-container");
 const messageEl = document.getElementById("message");
-const restartBtn = document.getElementById("restart-btn");
 const hintBtn = document.getElementById("hint-btn");
 const levelDisplayEl = document.getElementById("level-display");
 
@@ -199,7 +198,7 @@ function checkLoss() {
     // Pokaż reklamę In-App Interstitial, a następnie komunikat o przegranej
     showInterstitialAd(() => {
       messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
-      // Po krótkim czasie restartujemy poziom (bez zmiany poziomu)
+      // Po krótkim czasie restartujemy aktualny poziom
       setTimeout(() => {
         initGame();
       }, 2000);
@@ -233,7 +232,7 @@ function createLetterButtons() {
   // Rozszerzony alfabet z polskimi znakami (wszystkie litery małe)
   const extendedAlphabet = "abcdefghijklmnopqrstuvwxyząćęłńóśźż";
   
-  // Zbiór liter występujących w słowie (tylko litery, pomijamy np. spacje czy znaki interpunkcyjne)
+  // Zbiór liter występujących w słowie (pomijamy np. spacje czy interpunkcję)
   const correctSet = new Set();
   for (let char of word) {
     if (/[a-ząćęłńóśźż]/i.test(char)) {
@@ -249,19 +248,17 @@ function createLetterButtons() {
       remainingLetters.push(char);
     }
   }
-  // Losowo mieszamy pozostałe litery
   remainingLetters = shuffleArray(remainingLetters);
   
   // Wybieramy do 7 losowych liter jako dystraktory
   const distractorCount = Math.min(7, remainingLetters.length);
   const distractorLetters = remainingLetters.slice(0, distractorCount);
   
-  // Łączymy litery z słowa oraz dystraktory
-  const availableLetters = correctLetters.concat(distractorLetters);
-  const shuffledAvailableLetters = shuffleArray(availableLetters);
+  // Łączymy litery ze słowa oraz dystraktory i mieszamy
+  const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
   
-  // Tworzymy przyciski dla każdej litery z dostępnego zestawu
-  for (let letter of shuffledAvailableLetters) {
+  // Tworzymy przyciski
+  for (let letter of availableLetters) {
     const btn = document.createElement("button");
     btn.textContent = letter;
     btn.className = "letter-btn";
@@ -326,7 +323,6 @@ async function nextLevel() {
     }, 1500);
   } else {
     messageEl.textContent = "Brawo! Ukończyłeś wszystkie poziomy!";
-    // Opcjonalnie można zresetować poziom lub zaoferować restart gry
   }
 }
 
@@ -351,9 +347,6 @@ async function initGame() {
   updateDisplayedWord();
   createLetterButtons();
 }
-
-// Obsługa przycisku restart
-restartBtn.addEventListener("click", initGame);
 
 // Obsługa przycisku podpowiedzi
 hintBtn.addEventListener("click", handleHintClick);
