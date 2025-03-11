@@ -3,6 +3,7 @@ let word = "";
 let displayedWord = [];
 let wrongGuesses = 0;
 const maxWrong = 6;
+let userName = "";
 
 // Etapy rysowania wisielca (od 0 do 6 błędnych prób)
 const hangmanStages = [
@@ -77,13 +78,27 @@ const wordContainerEl = document.getElementById("word-container");
 const lettersContainerEl = document.getElementById("letters-container");
 const messageEl = document.getElementById("message");
 const restartBtn = document.getElementById("restart-btn");
+const hintBtn = document.getElementById("hint-btn");
 
-// Funkcja do pobierania słów z pliku world.json
+// Elementy do ustawiania nazwy użytkownika
+const usernameInputEl = document.getElementById("username-input");
+const setUsernameBtn = document.getElementById("set-username-btn");
+const usernameDisplayEl = document.getElementById("username-display");
+
+// Ustawienie nazwy użytkownika
+setUsernameBtn.addEventListener("click", function() {
+  userName = usernameInputEl.value.trim();
+  if (userName !== "") {
+    usernameDisplayEl.textContent = "Witaj, " + userName + "!";
+  }
+});
+
+// Funkcja do pobierania słów z pliku words.json
 async function loadWords() {
   try {
     const response = await fetch('words.json');
     if (!response.ok) {
-      throw new Error("Nie udało się wczytać pliku world.json");
+      throw new Error("Nie udało się wczytać pliku words.json");
     }
     const data = await response.json();
     return data.levels;
@@ -144,17 +159,20 @@ function handleLetterClick(e) {
 // Sprawdzenie wygranej – gdy nie ma już znaków podkreślenia
 function checkWin() {
   if (!displayedWord.includes("_")) {
-    messageEl.textContent = "Gratulacje! Wygrałeś!";
+    messageEl.textContent = "Gratulacje, " + (userName || "graczu") + "! Wygrałeś!";
     disableAllLetterButtons();
-    // Możesz tutaj wysłać wynik do bota Telegram np. przy użyciu tg.sendData()
+    // Możesz tu wysłać wynik do bota Telegram, np. przy użyciu tg.sendData()
   }
 }
 
 // Sprawdzenie przegranej
 function checkLoss() {
   if (wrongGuesses >= maxWrong) {
-    messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
     disableAllLetterButtons();
+    // Pokaż reklamę In-App Interstitial, a następnie komunikat o przegranej
+    showInterstitialAd(() => {
+      messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
+    });
   }
 }
 
@@ -177,18 +195,61 @@ function createLetterButtons() {
   }
 }
 
+// Funkcja odsłaniająca jedną literę jako podpowiedź
+function revealHint() {
+  for (let i = 0; i < word.length; i++) {
+    if (displayedWord[i] === "_") {
+      displayedWord[i] = word[i];
+      updateDisplayedWord();
+      checkWin();
+      break;
+    }
+  }
+}
+
+// Obsługa kliknięcia przycisku podpowiedzi
+function handleHintClick() {
+  // Jeżeli są jeszcze nieodkryte litery, wywołujemy reklamę Rewarded Ad
+  if (displayedWord.includes("_")) {
+    showRewardedAd(() => {
+      revealHint();
+    });
+  }
+}
+
+// Funkcje symulujące wyświetlanie reklam
+function showInterstitialAd(callback) {
+  const adOverlay = document.createElement("div");
+  adOverlay.id = "ad-overlay";
+  adOverlay.innerHTML = "<div class='ad-content'><p>Reklama Interstitial</p></div>";
+  document.body.appendChild(adOverlay);
+  setTimeout(() => {
+    document.body.removeChild(adOverlay);
+    if (callback) callback();
+  }, 3000); // symulacja 3 sekund
+}
+
+function showRewardedAd(callback) {
+  const adOverlay = document.createElement("div");
+  adOverlay.id = "ad-overlay";
+  adOverlay.innerHTML = "<div class='ad-content'><p>Reklama Rewarded: Oglądaj, aby otrzymać podpowiedź</p></div>";
+  document.body.appendChild(adOverlay);
+  setTimeout(() => {
+    document.body.removeChild(adOverlay);
+    if (callback) callback();
+  }, 3000); // symulacja 3 sekund
+}
+
 // Inicjalizacja gry
 async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
   updateHangmanDrawing();
 
-  // Pobieramy listę słów i wybieramy losowe słowo z poziomu 1
   const levels = await loadWords();
   word = chooseRandomWord(levels, 1);
   console.log("Wybrane słowo:", word);
   
-  // Inicjalizacja wyświetlanego słowa – zamieniamy każdą literę na podkreślenie
   displayedWord = [];
   for (let char of word) {
     if (char.match(/[a-z]/i)) {
@@ -203,6 +264,9 @@ async function initGame() {
 
 // Obsługa przycisku restart
 restartBtn.addEventListener("click", initGame);
+
+// Obsługa przycisku podpowiedzi
+hintBtn.addEventListener("click", handleHintClick);
 
 // Telegram WebApp – rozszerzenie interfejsu
 const tg = window.Telegram.WebApp;
