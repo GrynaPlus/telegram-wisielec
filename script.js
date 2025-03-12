@@ -236,6 +236,7 @@ function revealHint() {
 // Obsługa przycisku podpowiedzi
 function handleHintClick() {
   if (displayedWord.includes("_")) {
+    // Wyświetlamy reklamę Rewarded – po obejrzeniu reklamy, nagroda (alert oraz odsłonięcie podpowiedzi)
     showRewardedAd(() => {
       revealHint();
     });
@@ -243,21 +244,31 @@ function handleHintClick() {
 }
 
 // --------------------------------------------------------------------
-// Funkcja showInterstitialAd została zmodyfikowana, aby nie wyświetlać reklam.
-// Teraz po prostu wywołuje callback bez żadnego efektu.
+// Funkcja showInterstitialAd została wyłączona – od razu wywołuje callback.
 function showInterstitialAd(callback) {
   console.log("InterstitialAd wyłączone – przechodzimy dalej.");
   if (callback) callback();
 }
 
-// Funkcja showRewardedAd pozostaje bez zmian (możesz ją modyfikować według potrzeb)
+// Funkcja wyświetlająca reklamę Rewarded
 function showRewardedAd(callback) {
   console.log("Pokazuję reklamę Rewarded...");
-  // Przykładowa symulacja reklamy Rewarded – tutaj można wstawić właściwą integrację
-  setTimeout(() => {
+  // Wywołujemy funkcję integracyjną; poniżej przekazujemy konfigurację reklamy Rewarded.
+  show_9076387({
+    type: 'rewarded',
+    rewardedSettings: {
+      frequency: 1,   // Ustal częstotliwość, np. 1 reklama na sesję
+      timeout: 5      // Opcjonalnie: 5 sekund opóźnienia
+    }
+  }).then(() => {
     console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
+    // Przykładowe powiadomienie – możesz dodać własną logikę przyznawania nagrody.
+    alert('You have seen an ad!');
     if (callback) callback();
-  }, 2000);
+  }).catch((err) => {
+    console.warn("Błąd ładowania reklamy Rewarded:", err);
+    alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
+  });
 }
 
 // Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie kółka i stworzenie przycisków
@@ -284,12 +295,14 @@ async function initGame() {
   createLetterButtons();
 }
 
-// Obsługa przycisku podpowiedzi
+// Rejestracja obsługi przycisku podpowiedzi
 hintBtn.addEventListener("click", handleHintClick);
 
-// Telegram WebApp – rozszerzenie interfejsu
-const tg = window.Telegram.WebApp;
-tg.expand();
+// Telegram WebApp – rozszerzenie interfejsu (jeśli dotyczy)
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+  tg.expand();
+}
 
 // Uruchomienie gry po załadowaniu strony
 initGame();
