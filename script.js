@@ -159,13 +159,11 @@ function checkWin() {
 function checkLoss() {
   if (wrongGuesses >= maxWrong) {
     disableAllLetterButtons();
-    showInterstitialAd(() => {
-      // Nie pokazujemy prawidłowego słowa
-      messageEl.textContent = "Przegrałeś!";
-      setTimeout(() => {
-        initGame();
-      }, 2000);
-    });
+    // Bez wyświetlania reklamy – bezpośrednio kontynuujemy grę
+    messageEl.textContent = "Przegrałeś!";
+    setTimeout(() => {
+      initGame();
+    }, 2000);
   }
 }
 
@@ -249,7 +247,7 @@ function showRewardedAd(callback) {
     console.log("Pokazuję reklamę Rewarded...");
     show_9076387().then(() => {
         console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
-        if (callback) callback(); // Nagroda po reklamie
+        if (callback) callback();
     }).catch((err) => {
         console.warn("Błąd ładowania reklamy Rewarded:", err);
         alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
