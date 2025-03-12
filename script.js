@@ -2,27 +2,19 @@
 let word = "";
 let displayedWord = [];
 let wrongGuesses = 0;
-const maxWrong = 3;
+const maxWrong = 3; // Użytkownik przegrywa po 3 błędach
 let userName = "";
 let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
-
-// Aktualny poziom wyliczamy jako: floor(questionCount / 100) + 1
 let currentLevel = Math.floor(questionCount / 100) + 1;
 
-// Definicja animacji – zamiast wisielca, używamy animowanego okręgu
-const circumference = 2 * Math.PI * 45; // obwód okręgu o promieniu 45
-
 // Pobieranie elementów DOM
-const progressSvg = document.getElementById("progress-svg");
-const progressBar = document.querySelector(".progress-bar");
 const wordContainerEl = document.getElementById("word-container");
 const lettersContainerEl = document.getElementById("letters-container");
 const messageEl = document.getElementById("message");
 const hintBtn = document.getElementById("hint-btn");
 const levelDisplayEl = document.getElementById("level-display");
 
-// Elementy ustawiania nazwy użytkownika
 const usernameInputEl = document.getElementById("username-input");
 const setUsernameBtn = document.getElementById("set-username-btn");
 const usernameDisplayEl = document.getElementById("username-display");
@@ -45,7 +37,7 @@ setUsernameBtn.addEventListener("click", function() {
   }
 });
 
-// Aktualizacja wyświetlania poziomu
+// Aktualizacja wyświetlania poziomu oraz numeru pytania w danym poziomie
 function updateLevelDisplay() {
   currentLevel = Math.floor(questionCount / 100) + 1;
   const questionInLevel = (questionCount % 100) + 1;
@@ -74,23 +66,49 @@ async function loadWords() {
 */
 function chooseSequentialWord(levels, qCount) {
   const level = Math.floor(qCount / 100) + 1;
-  const index = qCount % 100; // dla pytań 0-99, indeks 0-99 itd.
+  const index = qCount % 100;
   const levelObj = levels.find(l => l.level === level);
   if (!levelObj || levelObj.words.length === 0) {
     return "";
   }
   if (index >= levelObj.words.length) {
-    // Jeśli słów jest mniej niż 100 w danym poziomie, wybieramy ostatnie dostępne
     return levelObj.words[levelObj.words.length - 1].toLowerCase();
   }
   return levelObj.words[index].toLowerCase();
 }
 
-// Aktualizacja animowanego paska postępu
-function updateProgressBar() {
-  const progress = wrongGuesses / maxWrong;
-  const offset = circumference * (1 - progress);
-  progressBar.style.strokeDashoffset = offset;
+// Reset wizualizacji ludzika na początek rundy
+function resetStickman() {
+  const stickman = document.getElementById("stickman");
+  const head = stickman.querySelector(".head");
+  const body = stickman.querySelector(".body");
+  const arms = stickman.querySelector(".arms");
+  const legs = stickman.querySelector(".legs");
+  
+  head.style.display = "block";
+  body.style.display = "block";
+  arms.style.display = "flex";
+  legs.style.display = "flex";
+}
+
+// Aktualizacja wizualizacji ludzika przy błędnych odpowiedziach
+function updateStickman() {
+  const stickman = document.getElementById("stickman");
+  if (wrongGuesses === 1) {
+    // Po pierwszej błędnej odpowiedzi odpadają nogi
+    const legs = stickman.querySelector(".legs");
+    legs.style.display = "none";
+  } else if (wrongGuesses === 2) {
+    // Po drugiej błędnej odpowiedzi odpadają tułów i ramiona
+    const body = stickman.querySelector(".body");
+    const arms = stickman.querySelector(".arms");
+    body.style.display = "none";
+    arms.style.display = "none";
+  } else if (wrongGuesses >= 3) {
+    // Po trzeciej błędnej odpowiedzi odpada głowa
+    const head = stickman.querySelector(".head");
+    head.style.display = "none";
+  }
 }
 
 // Aktualizacja wyświetlanego słowa
@@ -118,7 +136,7 @@ function handleLetterClick(e) {
     checkWin();
   } else {
     wrongGuesses++;
-    updateProgressBar();
+    updateStickman();
     checkLoss();
   }
 }
@@ -140,12 +158,12 @@ function checkWin() {
   }
 }
 
-// Sprawdzenie przegranej – gdy liczba błędów osiągnie maxWrong
+// Sprawdzenie przegranej – po osiągnięciu maksymalnej liczby błędów
 function checkLoss() {
   if (wrongGuesses >= maxWrong) {
     disableAllLetterButtons();
     showInterstitialAd(() => {
-      // Usuwamy wyświetlanie poprawnego hasła
+      // Nie pokazujemy prawidłowego słowa
       messageEl.textContent = "Przegrałeś!";
       setTimeout(() => {
         initGame();
@@ -173,7 +191,7 @@ function shuffleArray(array) {
   return array;
 }
 
-// Tworzenie przycisków liter – tylko litery występujące w słowie + 3 dodatkowe litery
+// Tworzenie przycisków liter – litery występujące w haśle + 5 dodatkowych liter
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
   
@@ -194,8 +212,8 @@ function createLetterButtons() {
   }
   remainingLetters = shuffleArray(remainingLetters);
   
-const distractorCount = Math.min(5, remainingLetters.length);
-const distractorLetters = remainingLetters.slice(0, distractorCount);
+  const distractorCount = Math.min(5, remainingLetters.length);
+  const distractorLetters = remainingLetters.slice(0, distractorCount);
   
   const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
   
@@ -220,7 +238,7 @@ function revealHint() {
   checkWin();
 }
 
-// Obsługa kliknięcia przycisku podpowiedzi
+// Obsługa przycisku podpowiedzi
 function handleHintClick() {
   if (displayedWord.includes("_")) {
     showRewardedAd(() => {
@@ -253,12 +271,16 @@ function showRewardedAd(callback) {
   }, 3000);
 }
 
-// Inicjalizacja gry – resetujemy zmienne, pobieramy słowo sekwencyjnie i tworzymy przyciski
+// Inicjalizacja gry – resetujemy zmienne, pobieramy słowo i tworzymy przyciski
 async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
-  updateProgressBar();
-
+  
+  // Reset wizualizacji ludzika
+  resetStickman();
+  
+  updateLevelDisplay();
+  
   const levels = await loadWords();
   word = chooseSequentialWord(levels, questionCount);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
