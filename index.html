@@ -19,14 +19,12 @@
     </div>
     <div id="username-display"></div>
     
-    <!-- Wyświetlanie aktualnego poziomu -->
-    <div id="level-display"></div>
-    
-    <!-- Kontener animacji – SVG jako pasek postępu -->
+    <!-- Wyświetlanie poziomu w kółeczku z animacją postępu -->
     <div id="hangman-container">
       <svg id="progress-svg" viewBox="0 0 100 100">
         <circle class="progress-background" cx="50" cy="50" r="45"></circle>
         <circle class="progress-bar" cx="50" cy="50" r="45"></circle>
+        <text id="level-text" x="50" y="55" text-anchor="middle" fill="#333" font-size="20" font-family="Arial">Level 1</text>
       </svg>
     </div>
     
@@ -36,12 +34,12 @@
     <!-- Kontener przycisków liter -->
     <div id="letters-container"></div>
     
-    <!-- Sterowanie – tylko przycisk podpowiedzi -->
+    <!-- Sterowanie – przycisk podpowiedzi -->
     <div id="controls">
       <button id="hint-btn">Podpowiedź (Reklama)</button>
     </div>
     
-    <!-- Komunikaty (wygrana, przegrana, informacje) -->
+    <!-- Komunikaty -->
     <div id="message"></div>
   </div>
   
