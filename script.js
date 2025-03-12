@@ -256,10 +256,13 @@ async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
   updateProgressBar();
-  
+
   const levels = await loadWords();
+  console.log("levels:", levels); // sprawdź, czy mamy dane z words.json
   word = chooseSequentialWord(levels, questionCount);
+  console.log("Wybrane słowo:", word, "dla pytania", questionCount);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
+  }
   
   displayedWord = [];
   for (let char of word) {
