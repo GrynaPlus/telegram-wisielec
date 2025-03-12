@@ -77,28 +77,27 @@ function chooseSequentialWord(levels, qCount) {
   return levelObj.words[index].toLowerCase();
 }
 
-// Reset animacji świecy na początek rundy
-function resetCandle() {
-  const candleBody = document.querySelector('#candle .body');
-  const flame = document.querySelector('#candle .flame');
-  candleBody.style.height = '100%';
-  flame.style.opacity = '1';
+// Reset animacji baterii na początek rundy
+function resetBattery() {
+  const batteryLevelEl = document.querySelector('#battery .battery-level');
+  batteryLevelEl.style.width = '100%';
+  batteryLevelEl.style.backgroundColor = '#4caf50';
 }
 
-// Aktualizacja animacji świecy przy błędnych odpowiedziach
-function updateCandle() {
-  const candleBody = document.querySelector('#candle .body');
-  const flame = document.querySelector('#candle .flame');
-  if (wrongGuesses === 1) {
-    // Po pierwszej błędnej odpowiedzi świeca spala się częściowo (66% wysokości)
-    candleBody.style.height = '66%';
-  } else if (wrongGuesses === 2) {
-    // Po drugiej błędnej odpowiedzi wysokość świecy zmniejsza się do 33%
-    candleBody.style.height = '33%';
-  } else if (wrongGuesses >= 3) {
-    // Po trzeciej błędnej odpowiedzi świeca całkowicie się wypala, a płomień znika
-    candleBody.style.height = '0%';
-    flame.style.opacity = '0';
+// Aktualizacja animacji baterii przy błędnych odpowiedziach
+function updateBattery() {
+  const batteryLevelEl = document.querySelector('#battery .battery-level');
+  // Obliczamy procent naładowania: przy wrongGuesses=1 -> 66%, 2 -> 33%, 3 -> 0%
+  let levelPercent = 100 - (wrongGuesses / maxWrong) * 100;
+  batteryLevelEl.style.width = levelPercent + '%';
+  
+  // Opcjonalnie zmieniamy kolor wskaźnika przy niskim poziomie
+  if (levelPercent > 50) {
+    batteryLevelEl.style.backgroundColor = '#4caf50'; // zielony
+  } else if (levelPercent > 20) {
+    batteryLevelEl.style.backgroundColor = '#ff9800'; // pomarańczowy
+  } else {
+    batteryLevelEl.style.backgroundColor = '#f44336'; // czerwony
   }
 }
 
@@ -127,7 +126,7 @@ function handleLetterClick(e) {
     checkWin();
   } else {
     wrongGuesses++;
-    updateCandle();
+    updateBattery();
     checkLoss();
   }
 }
