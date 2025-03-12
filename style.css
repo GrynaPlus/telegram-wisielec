@@ -18,7 +18,7 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* Kontener gry z przezroczystą białą tapetą i cieniem */
+/* Kontener gry */
 #game-container {
   background: rgba(255, 255, 255, 0.95);
   padding: 25px 30px;
@@ -71,30 +71,71 @@ body {
   color: #555;
 }
 
-/* Kontener animacji – SVG pasek postępu */
-#hangman-container {
-  margin-bottom: 20px;
-  width: 120px;
-  height: 120px;
-  margin: 0 auto 20px auto;
+/* Wizualizacja ludzika */
+#stickman {
+  position: relative;
+  width: 100px;
+  height: 200px;
+  margin: 20px auto;
 }
-#progress-svg {
-  transform: rotate(-90deg);
-  width: 100%;
-  height: 100%;
+
+/* Głowa */
+#stickman .head {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #ff6347;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
 }
-.progress-background {
-  fill: none;
-  stroke: #eee;
-  stroke-width: 10;
+
+/* Tułów */
+#stickman .body {
+  width: 4px;
+  height: 60px;
+  background: #ff6347;
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
 }
-.progress-bar {
-  fill: none;
-  stroke: #ff6347;
-  stroke-width: 10;
-  stroke-dasharray: 282.6; /* obwód okręgu 2πr, przy r=45 */
-  stroke-dashoffset: 282.6;
-  transition: stroke-dashoffset 0.5s ease;
+
+/* Ramiona */
+#stickman .arms {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  width: 80px;
+  height: 4px;
+  margin-left: -40px;
+  display: flex;
+  justify-content: space-between;
+}
+#stickman .arms .left-arm,
+#stickman .arms .right-arm {
+  width: 40px;
+  height: 4px;
+  background: #ff6347;
+}
+
+/* Nogi */
+#stickman .legs {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  width: 80px;
+  height: 4px;
+  margin-left: -40px;
+  display: flex;
+  justify-content: space-between;
+}
+#stickman .legs .left-leg,
+#stickman .legs .right-leg {
+  width: 40px;
+  height: 4px;
+  background: #ff6347;
 }
 
 /* Słowo do odgadnięcia */
