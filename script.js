@@ -48,7 +48,8 @@ setUsernameBtn.addEventListener("click", function() {
 // Aktualizacja wyświetlania poziomu
 function updateLevelDisplay() {
   currentLevel = Math.floor(questionCount / 100) + 1;
-  levelDisplayEl.textContent = "Poziom: " + currentLevel;
+  const questionInLevel = (questionCount % 100) + 1;
+  levelDisplayEl.textContent = "Poziom: " + currentLevel + " (" + questionInLevel + "/100)";
 }
 updateLevelDisplay();
 
