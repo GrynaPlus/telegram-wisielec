@@ -236,7 +236,7 @@ function revealHint() {
 // Obsługa przycisku podpowiedzi
 function handleHintClick() {
   if (displayedWord.includes("_")) {
-    // Wyświetlamy reklamę Rewarded – po obejrzeniu reklamy, nagroda (alert oraz odsłonięcie podpowiedzi)
+    // Wyświetlamy reklamę Rewarded – po obejrzeniu reklamy nagroda (odsłonięcie podpowiedzi) zostanie przyznana
     showRewardedAd(() => {
       revealHint();
     });
@@ -250,10 +250,10 @@ function showInterstitialAd(callback) {
   if (callback) callback();
 }
 
-// Funkcja wyświetlająca reklamę Rewarded
+// Funkcja wyświetlająca reklamę Rewarded z fallbackiem:
+// Jeśli reklama nie załaduje się, automatycznie przyznajemy nagrodę bez wyświetlania komunikatu o błędzie.
 function showRewardedAd(callback) {
   console.log("Pokazuję reklamę Rewarded...");
-  // Wywołujemy funkcję integracyjną; poniżej przekazujemy konfigurację reklamy Rewarded.
   show_9076387({
     type: 'rewarded',
     rewardedSettings: {
@@ -262,12 +262,12 @@ function showRewardedAd(callback) {
     }
   }).then(() => {
     console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
-    // Przykładowe powiadomienie – możesz dodać własną logikę przyznawania nagrody.
     alert('You have seen an ad!');
     if (callback) callback();
   }).catch((err) => {
     console.warn("Błąd ładowania reklamy Rewarded:", err);
-    alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
+    // Fallback – zamiast wyświetlać alert o błędzie, automatycznie przyznaj nagrodę
+    if (callback) callback();
   });
 }
 
