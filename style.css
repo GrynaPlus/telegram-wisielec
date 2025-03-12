@@ -71,38 +71,30 @@ body {
   color: #555;
 }
 
-/* Wizualizacja baterii */
-#battery {
-  position: relative;
-  width: 80px;
-  height: 40px;
-  margin: 20px auto;
+/* Animacja kółka (pasek postępu) */
+#hangman-container {
+  margin-bottom: 20px;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px auto;
 }
-
-.battery-body {
+#progress-svg {
+  transform: rotate(-90deg);
   width: 100%;
   height: 100%;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
 }
-
-.battery-level {
-  height: 100%;
-  width: 100%;
-  background-color: #4caf50; /* zielony przy pełnej baterii */
-  transition: width 0.5s ease, background-color 0.5s ease;
+.progress-background {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 10;
 }
-
-.battery-tip {
-  position: absolute;
-  right: -10px;
-  top: 25%;
-  width: 10px;
-  height: 50%;
-  background: #ccc;
-  border-radius: 2px;
+.progress-bar {
+  fill: none;
+  stroke: #ff6347;
+  stroke-width: 10;
+  stroke-dasharray: 282.6; /* obwód okręgu przy promieniu 45 */
+  stroke-dashoffset: 282.6;
+  transition: stroke-dashoffset 0.5s ease;
 }
 
 /* Słowo do odgadnięcia */
