@@ -4,8 +4,11 @@ let displayedWord = [];
 let wrongGuesses = 0;
 const maxWrong = 6;
 let userName = "";
-let currentLevel = 1;
+let questionCount = 0; // Liczba pytań, które użytkownik odgadł (poprawnie)
 const maxLevel = 10;
+
+// Aktualny poziom wyznaczamy jako: Math.floor(questionCount / 100) + 1
+let currentLevel = Math.floor(questionCount / 100) + 1;
 
 // Etapy rysowania wisielca (od 0 do 6 błędnych prób)
 const hangmanStages = [
@@ -88,23 +91,12 @@ const setUsernameBtn = document.getElementById("set-username-btn");
 const usernameDisplayEl = document.getElementById("username-display");
 const usernameContainerEl = document.getElementById("username-container");
 
-// Sprawdzenie, czy nazwa i poziom są zapisane w localStorage
+// Sprawdzenie, czy nazwa jest zapisana w localStorage
 if (localStorage.getItem("userName")) {
   userName = localStorage.getItem("userName");
   usernameDisplayEl.textContent = "Witaj, " + userName + "!";
   usernameContainerEl.style.display = "none";
 }
-if (localStorage.getItem("currentLevel")) {
-  currentLevel = parseInt(localStorage.getItem("currentLevel"));
-} else {
-  currentLevel = 1;
-}
-
-// Funkcja aktualizująca wyświetlanie poziomu
-function updateLevelDisplay() {
-  levelDisplayEl.textContent = "Poziom: " + currentLevel;
-}
-updateLevelDisplay();
 
 // Ustawienie nazwy użytkownika
 setUsernameBtn.addEventListener("click", function() {
@@ -115,6 +107,13 @@ setUsernameBtn.addEventListener("click", function() {
     usernameContainerEl.style.display = "none";
   }
 });
+
+// Funkcja aktualizująca wyświetlanie poziomu
+function updateLevelDisplay() {
+  currentLevel = Math.floor(questionCount / 100) + 1;
+  levelDisplayEl.textContent = "Poziom: " + currentLevel;
+}
+updateLevelDisplay();
 
 // Funkcja do pobierania słów z pliku words.json
 async function loadWords() {
@@ -131,22 +130,22 @@ async function loadWords() {
   }
 }
 
-/* 
-  Funkcja wybierająca słowo sekwencyjnie: dla danego poziomu (currentLevel)
-  pobieramy słowo z obiektu poziomu, którego indeks w tablicy słów wynosi currentLevel - 1.
-  Jeśli w danej kategorii jest mniej słów, wybieramy ostatnie dostępne.
+/*
+  Funkcja wybierająca słowo sekwencyjnie.
+  Dla danego poziomu (currentLevel) wybieramy słowo o indeksie = questionCount % 100.
 */
-function chooseSequentialWord(levels, chosenLevel) {
-  const levelObj = levels.find(l => l.level === chosenLevel);
-  if (!levelObj) {
+function chooseSequentialWord(levels, qCount) {
+  const level = Math.floor(qCount / 100) + 1;
+  const index = qCount % 100; // Dla pierwszych 100 pytań: index 0-99, itd.
+  const levelObj = levels.find(l => l.level === level);
+  if (!levelObj || levelObj.words.length === 0) {
     return "";
   }
-  const wordsArray = levelObj.words;
-  // Jeżeli ilość słów jest mniejsza niż numer pytania, wybieramy ostatnie słowo.
-  if (wordsArray.length < chosenLevel) {
-    return wordsArray[wordsArray.length - 1].toLowerCase();
+  if (index >= levelObj.words.length) {
+    // Jeśli w danym poziomie jest mniej niż 100 słów, wybieramy ostatnie dostępne
+    return levelObj.words[levelObj.words.length - 1].toLowerCase();
   }
-  return wordsArray[chosenLevel - 1].toLowerCase();
+  return levelObj.words[index].toLowerCase();
 }
 
 // Aktualizacja rysunku wisielca
@@ -191,9 +190,15 @@ function checkWin() {
   if (!displayedWord.includes("_")) {
     messageEl.textContent = "Gratulacje, " + (userName || "graczu") + "! Wygrałeś!";
     disableAllLetterButtons();
-    // Po krótkim czasie przechodzimy do kolejnego słowa (kolejnego poziomu)
+    // Po krótkim czasie zwiększamy licznik pytań i przechodzimy do kolejnego słowa
     setTimeout(() => {
-      nextLevel();
+      questionCount++;
+      if (questionCount >= 100 * maxLevel) {
+        messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
+      } else {
+        updateLevelDisplay();
+        initGame();
+      }
     }, 2000);
   }
 }
@@ -205,7 +210,7 @@ function checkLoss() {
     // Pokaż reklamę In-App Interstitial, a następnie komunikat o przegranej
     showInterstitialAd(() => {
       messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
-      // Po krótkim czasie restartujemy z tym samym słowem (poziom się nie zmienia)
+      // Po krótkim czasie restartujemy z tym samym słowem (bez zwiększania questionCount)
       setTimeout(() => {
         initGame();
       }, 2000);
@@ -318,21 +323,6 @@ function showRewardedAd(callback) {
   }, 3000); // symulacja 3 sekund
 }
 
-// Funkcja przechodząca do kolejnego poziomu (gdy użytkownik wygrał)
-async function nextLevel() {
-  if (currentLevel < maxLevel) {
-    currentLevel++;
-    localStorage.setItem("currentLevel", currentLevel);
-    messageEl.textContent = "Przechodzisz do poziomu " + currentLevel + "...";
-    updateLevelDisplay();
-    setTimeout(() => {
-      initGame();
-    }, 1500);
-  } else {
-    messageEl.textContent = "Brawo! Ukończyłeś wszystkie poziomy!";
-  }
-}
-
 // Inicjalizacja gry
 async function initGame() {
   wrongGuesses = 0;
@@ -340,8 +330,8 @@ async function initGame() {
   updateHangmanDrawing();
 
   const levels = await loadWords();
-  // Wybieramy słowo sekwencyjnie: dla poziomu currentLevel wybieramy słowo o indeksie (currentLevel - 1)
-  word = chooseSequentialWord(levels, currentLevel);
+  // Wybieramy słowo sekwencyjnie: dla pytania o numerze questionCount wybieramy słowo z poziomu = Math.floor(questionCount/100)+1
+  word = chooseSequentialWord(levels, questionCount);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
   
   // Inicjujemy tablicę wyświetlania słowa – litery, które są literami, zastępujemy "_" 
