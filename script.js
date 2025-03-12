@@ -8,10 +8,6 @@ let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
 let currentLevel = Math.floor(questionCount / 100) + 1;
 
-// Flagi zapobiegające wielokrotnemu wyświetleniu reklamy
-let adInProgress = false;
-let rewardedAdInProgress = false;
-
 // Pobieranie elementów DOM
 const wordContainerEl = document.getElementById("word-container");
 const lettersContainerEl = document.getElementById("letters-container");
@@ -63,7 +59,7 @@ function saveGameState() {
   localStorage.setItem("questionCount", questionCount);
 }
 
-// Zapis stanu gry przy opuszczaniu mini aplikacji Telegram
+// Zapis stanu gry przy opuszczaniu aplikacji
 window.addEventListener("beforeunload", saveGameState);
 
 // Funkcja do pobierania słów z pliku words.json
@@ -163,13 +159,11 @@ function checkWin() {
 function checkLoss() {
   if (wrongGuesses >= maxWrong) {
     disableAllLetterButtons();
-    showInterstitialAd(() => {
-      // Nie pokazujemy prawidłowego słowa
-      messageEl.textContent = "Przegrałeś!";
-      setTimeout(() => {
-        initGame();
-      }, 2000);
-    });
+    // Reklamy interstitial zostały wyłączone – przechodzimy od razu dalej
+    messageEl.textContent = "Przegrałeś!";
+    setTimeout(() => {
+      initGame();
+    }, 2000);
   }
 }
 
@@ -249,88 +243,21 @@ function handleHintClick() {
 }
 
 // --------------------------------------------------------------------
-// Modyfikacja funkcji showInterstitialAd – dodanie fallback timera
-// oraz flagi blokującej wielokrotne wywołanie reklamy.
+// Funkcja showInterstitialAd została zmodyfikowana, aby nie wyświetlać reklam.
+// Teraz po prostu wywołuje callback bez żadnego efektu.
 function showInterstitialAd(callback) {
-  if (adInProgress) {
-    if (callback) callback();
-    return;
-  }
-  adInProgress = true;
-  console.log("Pokazuję reklamę Interstitial...");
-  let resolved = false;
-  const fallbackTimer = setTimeout(() => {
-    if (!resolved) {
-      console.warn("Timeout reklamy Interstitial. Kontynuacja gry.");
-      resolved = true;
-      adInProgress = false;
-      if (callback) callback();
-    }
-  }, 7000); // Fallback po 7 sekundach
-
-  show_9076387({
-    type: 'inApp',
-    inAppSettings: {
-      frequency: 1,      // 2 reklamy na sesję
-      capping: 0,        // Co 6 minut (0.1h)
-      interval: 0,       // Minimum 30 sekund odstępu
-      timeout: 5,        // 5 sekund opóźnienia
-      everyPage: false   // Nie resetuj przy zmianie strony
-    }
-  }).then(() => {
-    if (!resolved) {
-      clearTimeout(fallbackTimer);
-      resolved = true;
-      adInProgress = false;
-      console.log("Reklama Interstitial zakończona");
-      if (callback) callback();
-    }
-  }).catch((err) => {
-    if (!resolved) {
-      clearTimeout(fallbackTimer);
-      resolved = true;
-      adInProgress = false;
-      console.warn("Błąd ładowania reklamy Interstitial:", err);
-      if (callback) callback();
-    }
-  });
+  console.log("InterstitialAd wyłączone – przechodzimy dalej.");
+  if (callback) callback();
 }
 
-// Modyfikacja funkcji showRewardedAd – analogicznie jak dla interstitial
+// Funkcja showRewardedAd pozostaje bez zmian (możesz ją modyfikować według potrzeb)
 function showRewardedAd(callback) {
-  if (rewardedAdInProgress) {
-    if (callback) callback();
-    return;
-  }
-  rewardedAdInProgress = true;
   console.log("Pokazuję reklamę Rewarded...");
-  let resolved = false;
-  const fallbackTimer = setTimeout(() => {
-    if (!resolved) {
-      console.warn("Timeout reklamy Rewarded. Przyznajemy nagrodę.");
-      resolved = true;
-      rewardedAdInProgress = false;
-      if (callback) callback();
-    }
-  }, 7000);
-
-  show_9076387().then(() => {
-    if (!resolved) {
-      clearTimeout(fallbackTimer);
-      resolved = true;
-      rewardedAdInProgress = false;
-      console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
-      if (callback) callback();
-    }
-  }).catch((err) => {
-    if (!resolved) {
-      clearTimeout(fallbackTimer);
-      resolved = true;
-      rewardedAdInProgress = false;
-      console.warn("Błąd ładowania reklamy Rewarded:", err);
-      alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
-    }
-  });
+  // Przykładowa symulacja reklamy Rewarded – tutaj można wstawić właściwą integrację
+  setTimeout(() => {
+    console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
+    if (callback) callback();
+  }, 2000);
 }
 
 // Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie kółka i stworzenie przycisków
