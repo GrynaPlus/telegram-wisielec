@@ -2,7 +2,7 @@
 let word = "";
 let displayedWord = [];
 let wrongGuesses = 0;
-const maxWrong = 6;
+const maxWrong = 3;
 let userName = "";
 let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
@@ -192,8 +192,8 @@ function createLetterButtons() {
   }
   remainingLetters = shuffleArray(remainingLetters);
   
-  const distractorCount = Math.min(3, remainingLetters.length);
-  const distractorLetters = remainingLetters.slice(0, distractorCount);
+const distractorCount = Math.min(5, remainingLetters.length);
+const distractorLetters = remainingLetters.slice(0, distractorCount);
   
   const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
   
