@@ -22,13 +22,13 @@
     <!-- Wyświetlanie aktualnego poziomu oraz numeru pytania -->
     <div id="level-display"></div>
     
-    <!-- Wizualizacja świecy -->
-<div id="battery">
-  <div class="battery-body">
-    <div class="battery-level"></div>
-  </div>
-  <div class="battery-tip"></div>
-</div>
+    <!-- Animacja postępu – kółko -->
+    <div id="hangman-container">
+      <svg id="progress-svg" viewBox="0 0 100 100">
+        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
+        <circle class="progress-bar" cx="50" cy="50" r="45"></circle>
+      </svg>
+    </div>
     
     <!-- Wyświetlanie słowa do odgadnięcia -->
     <div id="word-container"></div>
