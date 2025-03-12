@@ -22,18 +22,26 @@
     <!-- Wyświetlanie aktualnego poziomu -->
     <div id="level-display"></div>
     
+    <!-- Kontener animacji – SVG jako pasek postępu -->
     <div id="hangman-container">
-      <pre id="hangman-drawing"></pre>
+      <svg id="progress-svg" viewBox="0 0 100 100">
+        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
+        <circle class="progress-bar" cx="50" cy="50" r="45"></circle>
+      </svg>
     </div>
-    <div id="word-container">
-      <!-- Litery słowa -->
-    </div>
-    <div id="letters-container">
-      <!-- Przyciski z literami -->
-    </div>
+    
+    <!-- Wyświetlanie słowa do odgadnięcia -->
+    <div id="word-container"></div>
+    
+    <!-- Kontener przycisków liter -->
+    <div id="letters-container"></div>
+    
+    <!-- Sterowanie – tylko przycisk podpowiedzi -->
     <div id="controls">
       <button id="hint-btn">Podpowiedź (Reklama)</button>
     </div>
+    
+    <!-- Komunikaty (wygrana, przegrana, informacje) -->
     <div id="message"></div>
   </div>
   
