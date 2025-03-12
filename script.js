@@ -229,28 +229,37 @@ function handleHintClick() {
   }
 }
 
-// Symulacja reklamy In-App Interstitial
+// Symulacja reklamy In-App Interstitial z sieci partnerskiej
 function showInterstitialAd(callback) {
-  const adOverlay = document.createElement("div");
-  adOverlay.id = "ad-overlay";
-  adOverlay.innerHTML = "<div class='ad-content'><p>Reklama Interstitial</p></div>";
-  document.body.appendChild(adOverlay);
-  setTimeout(() => {
-    document.body.removeChild(adOverlay);
-    if (callback) callback();
-  }, 3000);
+    console.log("Pokazuję reklamę Interstitial...");
+    show_9076387({
+        type: 'inApp',
+        inAppSettings: {
+            frequency: 1,      // 2 reklamy na sesję
+            capping: 0,     // Co 6 minut (0.1h)
+            interval: 0,     // Minimum 30 sekund odstępu
+            timeout: 1,       // 5 sekund opóźnienia
+            everyPage: false  // Nie resetuj przy zmianie strony
+        }
+    }).then(() => {
+        console.log("Reklama Interstitial zakończona");
+        if (callback) callback(); // Kontynuacja gry po reklamie
+    }).catch((err) => {
+        console.warn("Błąd ładowania reklamy Interstitial:", err);
+        if (callback) callback(); // Kontynuacja nawet jak reklama nie zadziała
+    });
 }
 
-// Symulacja reklamy Rewarded Ad
+// Symulacja reklamy Rewarded Ad z sieci partnerskiej
 function showRewardedAd(callback) {
-  const adOverlay = document.createElement("div");
-  adOverlay.id = "ad-overlay";
-  adOverlay.innerHTML = "<div class='ad-content'><p>Reklama Rewarded: Oglądaj, aby otrzymać podpowiedź</p></div>";
-  document.body.appendChild(adOverlay);
-  setTimeout(() => {
-    document.body.removeChild(adOverlay);
-    if (callback) callback();
-  }, 3000);
+    console.log("Pokazuję reklamę Rewarded...");
+    show_9076387().then(() => {
+        console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
+        if (callback) callback(); // Nagroda po reklamie
+    }).catch((err) => {
+        console.warn("Błąd ładowania reklamy Rewarded:", err);
+        alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
+    });
 }
 
 // Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie kółka i stworzenie przycisków
