@@ -77,37 +77,28 @@ function chooseSequentialWord(levels, qCount) {
   return levelObj.words[index].toLowerCase();
 }
 
-// Reset wizualizacji ludzika na początek rundy
-function resetStickman() {
-  const stickman = document.getElementById("stickman");
-  const head = stickman.querySelector(".head");
-  const body = stickman.querySelector(".body");
-  const arms = stickman.querySelector(".arms");
-  const legs = stickman.querySelector(".legs");
-  
-  head.style.display = "block";
-  body.style.display = "block";
-  arms.style.display = "flex";
-  legs.style.display = "flex";
+// Reset animacji świecy na początek rundy
+function resetCandle() {
+  const candleBody = document.querySelector('#candle .body');
+  const flame = document.querySelector('#candle .flame');
+  candleBody.style.height = '100%';
+  flame.style.opacity = '1';
 }
 
-// Aktualizacja wizualizacji ludzika przy błędnych odpowiedziach
-function updateStickman() {
-  const stickman = document.getElementById("stickman");
+// Aktualizacja animacji świecy przy błędnych odpowiedziach
+function updateCandle() {
+  const candleBody = document.querySelector('#candle .body');
+  const flame = document.querySelector('#candle .flame');
   if (wrongGuesses === 1) {
-    // Po pierwszej błędnej odpowiedzi odpadają nogi
-    const legs = stickman.querySelector(".legs");
-    legs.style.display = "none";
+    // Po pierwszej błędnej odpowiedzi świeca spala się częściowo (66% wysokości)
+    candleBody.style.height = '66%';
   } else if (wrongGuesses === 2) {
-    // Po drugiej błędnej odpowiedzi odpadają tułów i ramiona
-    const body = stickman.querySelector(".body");
-    const arms = stickman.querySelector(".arms");
-    body.style.display = "none";
-    arms.style.display = "none";
+    // Po drugiej błędnej odpowiedzi wysokość świecy zmniejsza się do 33%
+    candleBody.style.height = '33%';
   } else if (wrongGuesses >= 3) {
-    // Po trzeciej błędnej odpowiedzi odpada głowa
-    const head = stickman.querySelector(".head");
-    head.style.display = "none";
+    // Po trzeciej błędnej odpowiedzi świeca całkowicie się wypala, a płomień znika
+    candleBody.style.height = '0%';
+    flame.style.opacity = '0';
   }
 }
 
@@ -136,7 +127,7 @@ function handleLetterClick(e) {
     checkWin();
   } else {
     wrongGuesses++;
-    updateStickman();
+    updateCandle();
     checkLoss();
   }
 }
@@ -271,13 +262,13 @@ function showRewardedAd(callback) {
   }, 3000);
 }
 
-// Inicjalizacja gry – resetujemy zmienne, pobieramy słowo i tworzymy przyciski
+// Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie świecy i stworzenie przycisków
 async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
   
-  // Reset wizualizacji ludzika
-  resetStickman();
+  // Reset animacji świecy
+  resetCandle();
   
   updateLevelDisplay();
   
