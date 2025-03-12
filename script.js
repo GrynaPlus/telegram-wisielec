@@ -4,88 +4,25 @@ let displayedWord = [];
 let wrongGuesses = 0;
 const maxWrong = 6;
 let userName = "";
-let questionCount = 0; // Liczba pytań, które użytkownik odgadł (poprawnie)
+let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
 
-// Aktualny poziom wyznaczamy jako: Math.floor(questionCount / 100) + 1
+// Aktualny poziom wyliczamy jako: floor(questionCount / 100) + 1
 let currentLevel = Math.floor(questionCount / 100) + 1;
 
-// Etapy rysowania wisielca (od 0 do 6 błędnych prób)
-const hangmanStages = [
-` 
- +---+
- |   |
-     |
-     |
-     |
-     |
-=========
-`,
-` 
- +---+
- |   |
- O   |
-     |
-     |
-     |
-=========
-`,
-` 
- +---+
- |   |
- O   |
- |   |
-     |
-     |
-=========
-`,
-` 
- +---+
- |   |
- O   |
-/|   |
-     |
-     |
-=========
-`,
-` 
- +---+
- |   |
- O   |
-/|\\  |
-     |
-     |
-=========
-`,
-` 
- +---+
- |   |
- O   |
-/|\\  |
-/    |
-     |
-=========
-`,
-` 
- +---+
- |   |
- O   |
-/|\\  |
-/ \\  |
-     |
-=========
-`
-];
+// Definicja animacji – zamiast wisielca, używamy animowanego okręgu
+const circumference = 2 * Math.PI * 45; // obwód okręgu o promieniu 45
 
 // Pobieranie elementów DOM
-const hangmanDrawingEl = document.getElementById("hangman-drawing");
+const progressSvg = document.getElementById("progress-svg");
+const progressBar = document.querySelector(".progress-bar");
 const wordContainerEl = document.getElementById("word-container");
 const lettersContainerEl = document.getElementById("letters-container");
 const messageEl = document.getElementById("message");
 const hintBtn = document.getElementById("hint-btn");
 const levelDisplayEl = document.getElementById("level-display");
 
-// Elementy do ustawiania nazwy użytkownika
+// Elementy ustawiania nazwy użytkownika
 const usernameInputEl = document.getElementById("username-input");
 const setUsernameBtn = document.getElementById("set-username-btn");
 const usernameDisplayEl = document.getElementById("username-display");
@@ -108,7 +45,7 @@ setUsernameBtn.addEventListener("click", function() {
   }
 });
 
-// Funkcja aktualizująca wyświetlanie poziomu
+// Aktualizacja wyświetlania poziomu
 function updateLevelDisplay() {
   currentLevel = Math.floor(questionCount / 100) + 1;
   levelDisplayEl.textContent = "Poziom: " + currentLevel;
@@ -131,26 +68,28 @@ async function loadWords() {
 }
 
 /*
-  Funkcja wybierająca słowo sekwencyjnie.
+  Wybieramy słowo sekwencyjnie.
   Dla danego poziomu (currentLevel) wybieramy słowo o indeksie = questionCount % 100.
 */
 function chooseSequentialWord(levels, qCount) {
   const level = Math.floor(qCount / 100) + 1;
-  const index = qCount % 100; // Dla pierwszych 100 pytań: index 0-99, itd.
+  const index = qCount % 100; // dla pytań 0-99, indeks 0-99 itd.
   const levelObj = levels.find(l => l.level === level);
   if (!levelObj || levelObj.words.length === 0) {
     return "";
   }
   if (index >= levelObj.words.length) {
-    // Jeśli w danym poziomie jest mniej niż 100 słów, wybieramy ostatnie dostępne
+    // Jeśli słów jest mniej niż 100 w danym poziomie, wybieramy ostatnie dostępne
     return levelObj.words[levelObj.words.length - 1].toLowerCase();
   }
   return levelObj.words[index].toLowerCase();
 }
 
-// Aktualizacja rysunku wisielca
-function updateHangmanDrawing() {
-  hangmanDrawingEl.textContent = hangmanStages[wrongGuesses];
+// Aktualizacja animowanego paska postępu
+function updateProgressBar() {
+  const progress = wrongGuesses / maxWrong;
+  const offset = circumference * (1 - progress);
+  progressBar.style.strokeDashoffset = offset;
 }
 
 // Aktualizacja wyświetlanego słowa
@@ -162,14 +101,13 @@ function updateDisplayedWord() {
   wordContainerEl.textContent = display.trim();
 }
 
-// Obsługa kliknięcia przycisku z literą
+// Obsługa kliknięcia przycisku litery
 function handleLetterClick(e) {
   const btn = e.target;
   const letter = btn.textContent.toLowerCase();
-  btn.disabled = true; // wyłączamy przycisk po kliknięciu
+  btn.disabled = true;
 
   if (word.includes(letter)) {
-    // Trafiona litera – uaktualniamy wyświetlanie słowa
     for (let i = 0; i < word.length; i++) {
       if (word[i] === letter) {
         displayedWord[i] = letter;
@@ -178,19 +116,17 @@ function handleLetterClick(e) {
     updateDisplayedWord();
     checkWin();
   } else {
-    // Nietrafiona – zwiększamy liczbę błędów i aktualizujemy rysunek
     wrongGuesses++;
-    updateHangmanDrawing();
+    updateProgressBar();
     checkLoss();
   }
 }
 
-// Sprawdzenie wygranej – gdy nie ma już znaków podkreślenia
+// Sprawdzenie wygranej – gdy nie ma już "_" w wyświetlanym słowie
 function checkWin() {
   if (!displayedWord.includes("_")) {
     messageEl.textContent = "Gratulacje, " + (userName || "graczu") + "! Wygrałeś!";
     disableAllLetterButtons();
-    // Po krótkim czasie zwiększamy licznik pytań i przechodzimy do kolejnego słowa
     setTimeout(() => {
       questionCount++;
       if (questionCount >= 100 * maxLevel) {
@@ -203,14 +139,12 @@ function checkWin() {
   }
 }
 
-// Sprawdzenie przegranej
+// Sprawdzenie przegranej – gdy liczba błędów osiągnie maxWrong
 function checkLoss() {
   if (wrongGuesses >= maxWrong) {
     disableAllLetterButtons();
-    // Pokaż reklamę In-App Interstitial, a następnie komunikat o przegranej
     showInterstitialAd(() => {
       messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
-      // Po krótkim czasie restartujemy z tym samym słowem (bez zwiększania questionCount)
       setTimeout(() => {
         initGame();
       }, 2000);
@@ -224,7 +158,7 @@ function disableAllLetterButtons() {
   buttons.forEach(btn => btn.disabled = true);
 }
 
-// Funkcja mieszająca elementy tablicy
+// Funkcja mieszająca tablicę
 function shuffleArray(array) {
   let currentIndex = array.length, temporaryValue, randomIndex;
   while (currentIndex !== 0) {
@@ -237,14 +171,11 @@ function shuffleArray(array) {
   return array;
 }
 
-// Tworzenie przycisków dla liter – tylko te występujące w słowie + 3 losowe litery z rozszerzonego alfabetu
+// Tworzenie przycisków liter – tylko litery występujące w słowie + 3 dodatkowe litery
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
   
-  // Rozszerzony alfabet z polskimi znakami (wszystkie litery małe)
   const extendedAlphabet = "abcdefghijklmnopqrstuvwxyząćęłńóśźż";
-  
-  // Zbiór liter występujących w słowie (pomijamy spacje i interpunkcję)
   const correctSet = new Set();
   for (let char of word) {
     if (/[a-ząćęłńóśźż]/i.test(char)) {
@@ -253,7 +184,6 @@ function createLetterButtons() {
   }
   const correctLetters = Array.from(correctSet);
   
-  // Zbiór liter, które mogą być dodatkowymi opcjami (wszystkie z alfabetu, ale usunięte te już w słowie)
   let remainingLetters = [];
   for (let char of extendedAlphabet) {
     if (!correctSet.has(char)) {
@@ -262,14 +192,11 @@ function createLetterButtons() {
   }
   remainingLetters = shuffleArray(remainingLetters);
   
-  // Wybieramy do 3 losowych liter jako dystraktory
   const distractorCount = Math.min(3, remainingLetters.length);
   const distractorLetters = remainingLetters.slice(0, distractorCount);
   
-  // Łączymy litery ze słowa oraz dystraktory i mieszamy
   const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
   
-  // Tworzymy przyciski dla każdej litery
   for (let letter of availableLetters) {
     const btn = document.createElement("button");
     btn.textContent = letter;
@@ -300,7 +227,7 @@ function handleHintClick() {
   }
 }
 
-// Funkcje symulujące wyświetlanie reklam
+// Symulacja reklamy In-App Interstitial
 function showInterstitialAd(callback) {
   const adOverlay = document.createElement("div");
   adOverlay.id = "ad-overlay";
@@ -309,9 +236,10 @@ function showInterstitialAd(callback) {
   setTimeout(() => {
     document.body.removeChild(adOverlay);
     if (callback) callback();
-  }, 3000); // symulacja 3 sekund
+  }, 3000);
 }
 
+// Symulacja reklamy Rewarded Ad
 function showRewardedAd(callback) {
   const adOverlay = document.createElement("div");
   adOverlay.id = "ad-overlay";
@@ -320,21 +248,19 @@ function showRewardedAd(callback) {
   setTimeout(() => {
     document.body.removeChild(adOverlay);
     if (callback) callback();
-  }, 3000); // symulacja 3 sekund
+  }, 3000);
 }
 
-// Inicjalizacja gry
+// Inicjalizacja gry – resetujemy zmienne, pobieramy słowo sekwencyjnie i tworzymy przyciski
 async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
-  updateHangmanDrawing();
+  updateProgressBar();
 
   const levels = await loadWords();
-  // Wybieramy słowo sekwencyjnie: dla pytania o numerze questionCount wybieramy słowo z poziomu = Math.floor(questionCount/100)+1
   word = chooseSequentialWord(levels, questionCount);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
   
-  // Inicjujemy tablicę wyświetlania słowa – litery, które są literami, zastępujemy "_" 
   displayedWord = [];
   for (let char of word) {
     if (/[a-ząćęłńóśźż]/i.test(char)) {
