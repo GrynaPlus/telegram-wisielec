@@ -19,15 +19,21 @@
     </div>
     <div id="username-display"></div>
     
-    <!-- Wyświetlanie aktualnego poziomu -->
+    <!-- Wyświetlanie aktualnego poziomu oraz numeru pytania -->
     <div id="level-display"></div>
     
-    <!-- Kontener animacji – SVG jako pasek postępu -->
-    <div id="hangman-container">
-      <svg id="progress-svg" viewBox="0 0 100 100">
-        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
-        <circle class="progress-bar" cx="50" cy="50" r="45"></circle>
-      </svg>
+    <!-- Wizualizacja ludzika -->
+    <div id="stickman">
+      <div class="head"></div>
+      <div class="body"></div>
+      <div class="arms">
+        <div class="left-arm"></div>
+        <div class="right-arm"></div>
+      </div>
+      <div class="legs">
+        <div class="left-leg"></div>
+        <div class="right-leg"></div>
+      </div>
     </div>
     
     <!-- Wyświetlanie słowa do odgadnięcia -->
@@ -36,7 +42,7 @@
     <!-- Kontener przycisków liter -->
     <div id="letters-container"></div>
     
-    <!-- Sterowanie – tylko przycisk podpowiedzi -->
+    <!-- Sterowanie – przycisk podpowiedzi -->
     <div id="controls">
       <button id="hint-btn">Podpowiedź (Reklama)</button>
     </div>
