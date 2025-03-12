@@ -131,15 +131,22 @@ async function loadWords() {
   }
 }
 
-// Wybór losowego słowa z danego poziomu
-function chooseRandomWord(levels, chosenLevel) {
+/* 
+  Funkcja wybierająca słowo sekwencyjnie: dla danego poziomu (currentLevel)
+  pobieramy słowo z obiektu poziomu, którego indeks w tablicy słów wynosi currentLevel - 1.
+  Jeśli w danej kategorii jest mniej słów, wybieramy ostatnie dostępne.
+*/
+function chooseSequentialWord(levels, chosenLevel) {
   const levelObj = levels.find(l => l.level === chosenLevel);
-  if (!levelObj || levelObj.words.length === 0) {
+  if (!levelObj) {
     return "";
   }
-  const words = levelObj.words;
-  const randomIndex = Math.floor(Math.random() * words.length);
-  return words[randomIndex].toLowerCase();
+  const wordsArray = levelObj.words;
+  // Jeżeli ilość słów jest mniejsza niż numer pytania, wybieramy ostatnie słowo.
+  if (wordsArray.length < chosenLevel) {
+    return wordsArray[wordsArray.length - 1].toLowerCase();
+  }
+  return wordsArray[chosenLevel - 1].toLowerCase();
 }
 
 // Aktualizacja rysunku wisielca
@@ -184,7 +191,7 @@ function checkWin() {
   if (!displayedWord.includes("_")) {
     messageEl.textContent = "Gratulacje, " + (userName || "graczu") + "! Wygrałeś!";
     disableAllLetterButtons();
-    // Po krótkim czasie przechodzimy do kolejnego poziomu
+    // Po krótkim czasie przechodzimy do kolejnego słowa (kolejnego poziomu)
     setTimeout(() => {
       nextLevel();
     }, 2000);
@@ -198,7 +205,7 @@ function checkLoss() {
     // Pokaż reklamę In-App Interstitial, a następnie komunikat o przegranej
     showInterstitialAd(() => {
       messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
-      // Po krótkim czasie restartujemy aktualny poziom
+      // Po krótkim czasie restartujemy z tym samym słowem (poziom się nie zmienia)
       setTimeout(() => {
         initGame();
       }, 2000);
@@ -225,14 +232,14 @@ function shuffleArray(array) {
   return array;
 }
 
-// Tworzenie przycisków dla liter - tylko te występujące w słowie + 3 losowe litery z rozszerzonego alfabetu
+// Tworzenie przycisków dla liter – tylko te występujące w słowie + 3 losowe litery z rozszerzonego alfabetu
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
   
   // Rozszerzony alfabet z polskimi znakami (wszystkie litery małe)
   const extendedAlphabet = "abcdefghijklmnopqrstuvwxyząćęłńóśźż";
   
-  // Zbiór liter występujących w słowie (pomijamy np. spacje czy interpunkcję)
+  // Zbiór liter występujących w słowie (pomijamy spacje i interpunkcję)
   const correctSet = new Set();
   for (let char of word) {
     if (/[a-ząćęłńóśźż]/i.test(char)) {
@@ -311,7 +318,7 @@ function showRewardedAd(callback) {
   }, 3000); // symulacja 3 sekund
 }
 
-// Funkcja przechodząca do kolejnego poziomu
+// Funkcja przechodząca do kolejnego poziomu (gdy użytkownik wygrał)
 async function nextLevel() {
   if (currentLevel < maxLevel) {
     currentLevel++;
@@ -333,9 +340,11 @@ async function initGame() {
   updateHangmanDrawing();
 
   const levels = await loadWords();
-  word = chooseRandomWord(levels, currentLevel);
+  // Wybieramy słowo sekwencyjnie: dla poziomu currentLevel wybieramy słowo o indeksie (currentLevel - 1)
+  word = chooseSequentialWord(levels, currentLevel);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
   
+  // Inicjujemy tablicę wyświetlania słowa – litery, które są literami, zastępujemy "_" 
   displayedWord = [];
   for (let char of word) {
     if (/[a-ząćęłńóśźż]/i.test(char)) {
