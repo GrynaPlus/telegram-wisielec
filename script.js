@@ -59,7 +59,7 @@ function saveGameState() {
   localStorage.setItem("questionCount", questionCount);
 }
 
-// Zapis stanu gry przy opuszczaniu aplikacji
+// Zapis stanu gry przy opuszczaniu mini aplikacji Telegram
 window.addEventListener("beforeunload", saveGameState);
 
 // Funkcja do pobierania słów z pliku words.json
@@ -159,11 +159,13 @@ function checkWin() {
 function checkLoss() {
   if (wrongGuesses >= maxWrong) {
     disableAllLetterButtons();
-    // Reklamy interstitial zostały wyłączone – przechodzimy od razu dalej
-    messageEl.textContent = "Przegrałeś!";
-    setTimeout(() => {
-      initGame();
-    }, 2000);
+    showInterstitialAd(() => {
+      // Nie pokazujemy prawidłowego słowa
+      messageEl.textContent = "Przegrałeś!";
+      setTimeout(() => {
+        initGame();
+      }, 2000);
+    });
   }
 }
 
@@ -236,39 +238,22 @@ function revealHint() {
 // Obsługa przycisku podpowiedzi
 function handleHintClick() {
   if (displayedWord.includes("_")) {
-    // Wyświetlamy reklamę Rewarded – po obejrzeniu reklamy nagroda (odsłonięcie podpowiedzi) zostanie przyznana
     showRewardedAd(() => {
       revealHint();
     });
   }
 }
 
-// --------------------------------------------------------------------
-// Funkcja showInterstitialAd została wyłączona – od razu wywołuje callback.
-function showInterstitialAd(callback) {
-  console.log("InterstitialAd wyłączone – przechodzimy dalej.");
-  if (callback) callback();
-}
-
-// Funkcja wyświetlająca reklamę Rewarded z fallbackiem:
-// Jeśli reklama nie załaduje się, automatycznie przyznajemy nagrodę bez wyświetlania komunikatu o błędzie.
+// Symulacja reklamy Rewarded Ad z sieci partnerskiej
 function showRewardedAd(callback) {
-  console.log("Pokazuję reklamę Rewarded...");
-  show_9076387({
-    type: 'rewarded',
-    rewardedSettings: {
-      frequency: 1,   // Ustal częstotliwość, np. 1 reklama na sesję
-      timeout: 5      // Opcjonalnie: 5 sekund opóźnienia
-    }
-  }).then(() => {
-    console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
-    alert('You have seen an ad!');
-    if (callback) callback();
-  }).catch((err) => {
-    console.warn("Błąd ładowania reklamy Rewarded:", err);
-    // Fallback – zamiast wyświetlać alert o błędzie, automatycznie przyznaj nagrodę
-    if (callback) callback();
-  });
+    console.log("Pokazuję reklamę Rewarded...");
+    show_9076387().then(() => {
+        console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
+        if (callback) callback(); // Nagroda po reklamie
+    }).catch((err) => {
+        console.warn("Błąd ładowania reklamy Rewarded:", err);
+        alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
+    });
 }
 
 // Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie kółka i stworzenie przycisków
@@ -295,14 +280,12 @@ async function initGame() {
   createLetterButtons();
 }
 
-// Rejestracja obsługi przycisku podpowiedzi
+// Obsługa przycisku podpowiedzi
 hintBtn.addEventListener("click", handleHintClick);
 
-// Telegram WebApp – rozszerzenie interfejsu (jeśli dotyczy)
-const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) {
-  tg.expand();
-}
+// Telegram WebApp – rozszerzenie interfejsu
+const tg = window.Telegram.WebApp;
+tg.expand();
 
 // Uruchomienie gry po załadowaniu strony
 initGame();
