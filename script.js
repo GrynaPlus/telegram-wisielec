@@ -23,7 +23,7 @@ const usernameContainerEl = document.getElementById("username-container");
 const progressBar = document.querySelector(".progress-bar");
 const circumference = 2 * Math.PI * 45; // Obwód okręgu o promieniu 45
 
-// Sprawdzenie, czy nazwa jest zapisana w localStorage
+// Sprawdzenie, czy nazwa użytkownika jest zapisana w localStorage
 if (localStorage.getItem("userName")) {
   userName = localStorage.getItem("userName");
   usernameDisplayEl.textContent = "Witaj, " + userName + "!";
@@ -47,6 +47,20 @@ function updateLevelDisplay() {
   levelDisplayEl.textContent = "Poziom: " + currentLevel + " (" + questionInLevel + "/100)";
 }
 updateLevelDisplay();
+
+// Przywrócenie zapisanego stanu gry (questionCount) z localStorage, jeśli istnieje
+if (localStorage.getItem("questionCount")) {
+  questionCount = parseInt(localStorage.getItem("questionCount"), 10);
+  updateLevelDisplay();
+}
+
+// Funkcja zapisująca stan gry (aktualny poziom)
+function saveGameState() {
+  localStorage.setItem("questionCount", questionCount);
+}
+
+// Zapis stanu gry przy opuszczaniu mini aplikacji Telegram
+window.addEventListener("beforeunload", saveGameState);
 
 // Funkcja do pobierania słów z pliku words.json
 async function loadWords() {
@@ -130,6 +144,7 @@ function checkWin() {
     disableAllLetterButtons();
     setTimeout(() => {
       questionCount++;
+      saveGameState(); // Zapis stanu gry po poprawnej odpowiedzi
       if (questionCount >= 100 * maxLevel) {
         messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
       } else {
@@ -236,10 +251,10 @@ function showInterstitialAd(callback) {
         type: 'inApp',
         inAppSettings: {
             frequency: 1,      // 2 reklamy na sesję
-            capping: 0,     // Co 6 minut (0.1h)
-            interval: 0,     // Minimum 30 sekund odstępu
-            timeout: 1,       // 5 sekund opóźnienia
-            everyPage: false  // Nie resetuj przy zmianie strony
+            capping: 0,        // Co 6 minut (0.1h)
+            interval: 0,       // Minimum 30 sekund odstępu
+            timeout: 1,        // 5 sekund opóźnienia
+            everyPage: false   // Nie resetuj przy zmianie strony
         }
     }).then(() => {
         console.log("Reklama Interstitial zakończona");
