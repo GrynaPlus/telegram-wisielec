@@ -18,7 +18,7 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* Kontener gry z przezroczystą białą tapetą i cieniem */
+/* Kontener gry */
 #game-container {
   background: rgba(255, 255, 255, 0.95);
   padding: 25px 30px;
@@ -64,14 +64,7 @@ body {
   color: #333;
 }
 
-/* Wyświetlanie poziomu */
-#level-display {
-  font-size: 16px;
-  margin-bottom: 15px;
-  color: #555;
-}
-
-/* Kontener animacji – SVG pasek postępu */
+/* Kontener animacji – SVG z paskiem postępu */
 #hangman-container {
   margin-bottom: 20px;
   width: 120px;
@@ -92,9 +85,12 @@ body {
   fill: none;
   stroke: #ff6347;
   stroke-width: 10;
-  stroke-dasharray: 282.6; /* obwód okręgu 2πr, przy r=45 */
+  stroke-dasharray: 282.6; /* 2π*45 */
   stroke-dashoffset: 282.6;
   transition: stroke-dashoffset 0.5s ease;
+}
+#level-text {
+  transform: rotate(90deg); /* aby tekst był poziomy */
 }
 
 /* Słowo do odgadnięcia */
@@ -155,7 +151,7 @@ body {
   color: #222;
 }
 
-/* Styl dla symulacji reklam */
+/* Styl symulacji reklam */
 #ad-overlay {
   position: fixed;
   top: 0;
