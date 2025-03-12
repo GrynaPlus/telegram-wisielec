@@ -20,6 +20,9 @@ const setUsernameBtn = document.getElementById("set-username-btn");
 const usernameDisplayEl = document.getElementById("username-display");
 const usernameContainerEl = document.getElementById("username-container");
 
+const progressBar = document.querySelector(".progress-bar");
+const circumference = 2 * Math.PI * 45; // Obwód okręgu o promieniu 45
+
 // Sprawdzenie, czy nazwa jest zapisana w localStorage
 if (localStorage.getItem("userName")) {
   userName = localStorage.getItem("userName");
@@ -77,28 +80,17 @@ function chooseSequentialWord(levels, qCount) {
   return levelObj.words[index].toLowerCase();
 }
 
-// Reset animacji baterii na początek rundy
-function resetBattery() {
-  const batteryLevelEl = document.querySelector('#battery .battery-level');
-  batteryLevelEl.style.width = '100%';
-  batteryLevelEl.style.backgroundColor = '#4caf50';
+// Reset wskaźnika postępu (koła) na początek rundy
+function resetProgress() {
+  wrongGuesses = 0;
+  progressBar.style.strokeDashoffset = circumference;
 }
 
-// Aktualizacja animacji baterii przy błędnych odpowiedziach
-function updateBattery() {
-  const batteryLevelEl = document.querySelector('#battery .battery-level');
-  // Obliczamy procent naładowania: przy wrongGuesses=1 -> 66%, 2 -> 33%, 3 -> 0%
-  let levelPercent = 100 - (wrongGuesses / maxWrong) * 100;
-  batteryLevelEl.style.width = levelPercent + '%';
-  
-  // Opcjonalnie zmieniamy kolor wskaźnika przy niskim poziomie
-  if (levelPercent > 50) {
-    batteryLevelEl.style.backgroundColor = '#4caf50'; // zielony
-  } else if (levelPercent > 20) {
-    batteryLevelEl.style.backgroundColor = '#ff9800'; // pomarańczowy
-  } else {
-    batteryLevelEl.style.backgroundColor = '#f44336'; // czerwony
-  }
+// Aktualizacja wskaźnika postępu po błędnej odpowiedzi
+function updateProgressBar() {
+  const progress = wrongGuesses / maxWrong;
+  const offset = circumference * (1 - progress);
+  progressBar.style.strokeDashoffset = offset;
 }
 
 // Aktualizacja wyświetlanego słowa
@@ -126,7 +118,7 @@ function handleLetterClick(e) {
     checkWin();
   } else {
     wrongGuesses++;
-    updateBattery();
+    updateProgressBar();
     checkLoss();
   }
 }
@@ -261,14 +253,12 @@ function showRewardedAd(callback) {
   }, 3000);
 }
 
-// Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie świecy i stworzenie przycisków
+// Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie kółka i stworzenie przycisków
 async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
   
-  // Reset animacji świecy
-  resetCandle();
-  
+  resetProgress();
   updateLevelDisplay();
   
   const levels = await loadWords();
