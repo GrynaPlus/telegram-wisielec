@@ -144,7 +144,8 @@ function checkLoss() {
   if (wrongGuesses >= maxWrong) {
     disableAllLetterButtons();
     showInterstitialAd(() => {
-      messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
+      // Usuwamy wyświetlanie poprawnego hasła
+      messageEl.textContent = "Przegrałeś!";
       setTimeout(() => {
         initGame();
       }, 2000);
