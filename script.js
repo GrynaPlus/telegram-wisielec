@@ -2,15 +2,16 @@
 let word = "";
 let displayedWord = [];
 let wrongGuesses = 0;
-const maxWrong = 3; // Po 3 błędnych odpowiedziach przegrywa
+const maxWrong = 6;
 let userName = "";
-let questionCount = 0; // Numer bieżącego pytania (poprawne odpowiedzi)
-const totalQuestionsPerLevel = 100; // Zakładamy 100 pytań na poziom
+let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
 
-// Aktualny poziom wyliczamy jako: Math.floor(questionCount / totalQuestionsPerLevel) + 1
-let currentLevel = Math.floor(questionCount / totalQuestionsPerLevel) + 1;
-const circumference = 2 * Math.PI * 45; // Obwód okręgu o promieniu 45
+// Aktualny poziom wyliczamy jako: floor(questionCount / 100) + 1
+let currentLevel = Math.floor(questionCount / 100) + 1;
+
+// Definicja animacji – zamiast wisielca, używamy animowanego okręgu
+const circumference = 2 * Math.PI * 45; // obwód okręgu o promieniu 45
 
 // Pobieranie elementów DOM
 const progressSvg = document.getElementById("progress-svg");
@@ -20,9 +21,8 @@ const lettersContainerEl = document.getElementById("letters-container");
 const messageEl = document.getElementById("message");
 const hintBtn = document.getElementById("hint-btn");
 const levelDisplayEl = document.getElementById("level-display");
-const levelTextEl = document.getElementById("level-text");
 
-// Elementy do ustawiania nazwy użytkownika
+// Elementy ustawiania nazwy użytkownika
 const usernameInputEl = document.getElementById("username-input");
 const setUsernameBtn = document.getElementById("set-username-btn");
 const usernameDisplayEl = document.getElementById("username-display");
@@ -45,11 +45,10 @@ setUsernameBtn.addEventListener("click", function() {
   }
 });
 
-// Aktualizacja wyświetlania poziomu i tekstu w kółeczku
+// Aktualizacja wyświetlania poziomu
 function updateLevelDisplay() {
-  currentLevel = Math.floor(questionCount / totalQuestionsPerLevel) + 1;
+  currentLevel = Math.floor(questionCount / 100) + 1;
   levelDisplayEl.textContent = "Poziom: " + currentLevel;
-  levelTextEl.textContent = "Level " + currentLevel;
 }
 updateLevelDisplay();
 
@@ -69,25 +68,26 @@ async function loadWords() {
 }
 
 /*
-  Wybieramy słowo sekwencyjnie:
-  Dla danego poziomu (currentLevel) wybieramy słowo o indeksie = questionCount % totalQuestionsPerLevel.
+  Wybieramy słowo sekwencyjnie.
+  Dla danego poziomu (currentLevel) wybieramy słowo o indeksie = questionCount % 100.
 */
 function chooseSequentialWord(levels, qCount) {
-  const level = Math.floor(qCount / totalQuestionsPerLevel) + 1;
-  const index = qCount % totalQuestionsPerLevel;
+  const level = Math.floor(qCount / 100) + 1;
+  const index = qCount % 100; // dla pytań 0-99, indeks 0-99 itd.
   const levelObj = levels.find(l => l.level === level);
   if (!levelObj || levelObj.words.length === 0) {
     return "";
   }
   if (index >= levelObj.words.length) {
+    // Jeśli słów jest mniej niż 100 w danym poziomie, wybieramy ostatnie dostępne
     return levelObj.words[levelObj.words.length - 1].toLowerCase();
   }
   return levelObj.words[index].toLowerCase();
 }
 
-// Aktualizacja paska postępu – wypełnienie zależy od postępu w bieżącym poziomie
+// Aktualizacja animowanego paska postępu
 function updateProgressBar() {
-  let progress = (questionCount % totalQuestionsPerLevel) / totalQuestionsPerLevel;
+  const progress = wrongGuesses / maxWrong;
   const offset = circumference * (1 - progress);
   progressBar.style.strokeDashoffset = offset;
 }
@@ -106,7 +106,7 @@ function handleLetterClick(e) {
   const btn = e.target;
   const letter = btn.textContent.toLowerCase();
   btn.disabled = true;
-  
+
   if (word.includes(letter)) {
     for (let i = 0; i < word.length; i++) {
       if (word[i] === letter) {
@@ -117,42 +117,42 @@ function handleLetterClick(e) {
     checkWin();
   } else {
     wrongGuesses++;
-    if (wrongGuesses >= maxWrong) {
-      checkLoss();
-    }
+    updateProgressBar();
+    checkLoss();
   }
 }
 
-// Sprawdzenie wygranej – gdy nie ma już "_" w haśle
+// Sprawdzenie wygranej – gdy nie ma już "_" w wyświetlanym słowie
 function checkWin() {
   if (!displayedWord.includes("_")) {
     messageEl.textContent = "Gratulacje, " + (userName || "graczu") + "! Wygrałeś!";
     disableAllLetterButtons();
     setTimeout(() => {
       questionCount++;
-      updateLevelDisplay();
-      updateProgressBar();
-      if (questionCount >= totalQuestionsPerLevel * maxLevel) {
+      if (questionCount >= 100 * maxLevel) {
         messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
       } else {
+        updateLevelDisplay();
         initGame();
       }
     }, 2000);
   }
 }
 
-// Sprawdzenie przegranej – gdy liczba błędów osiągnie 3
+// Sprawdzenie przegranej – gdy liczba błędów osiągnie maxWrong
 function checkLoss() {
-  disableAllLetterButtons();
-  showInterstitialAd(() => {
-    messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
-    setTimeout(() => {
-      initGame();
-    }, 2000);
-  });
+  if (wrongGuesses >= maxWrong) {
+    disableAllLetterButtons();
+    showInterstitialAd(() => {
+      messageEl.textContent = "Przegrałeś! Prawidłowe słowo to: " + word;
+      setTimeout(() => {
+        initGame();
+      }, 2000);
+    });
+  }
 }
 
-// Wyłączenie przycisków liter
+// Wyłączenie wszystkich przycisków liter
 function disableAllLetterButtons() {
   const buttons = document.querySelectorAll(".letter-btn");
   buttons.forEach(btn => btn.disabled = true);
@@ -171,7 +171,7 @@ function shuffleArray(array) {
   return array;
 }
 
-// Tworzenie przycisków liter – wyświetlamy litery występujące w haśle + 4 dystraktory
+// Tworzenie przycisków liter – tylko litery występujące w słowie + 3 dodatkowe litery
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
   
@@ -192,7 +192,7 @@ function createLetterButtons() {
   }
   remainingLetters = shuffleArray(remainingLetters);
   
-  const distractorCount = Math.min(4, remainingLetters.length);
+  const distractorCount = Math.min(3, remainingLetters.length);
   const distractorLetters = remainingLetters.slice(0, distractorCount);
   
   const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
@@ -218,7 +218,7 @@ function revealHint() {
   checkWin();
 }
 
-// Obsługa przycisku podpowiedzi
+// Obsługa kliknięcia przycisku podpowiedzi
 function handleHintClick() {
   if (displayedWord.includes("_")) {
     showRewardedAd(() => {
@@ -251,18 +251,15 @@ function showRewardedAd(callback) {
   }, 3000);
 }
 
-// Inicjalizacja gry: resetujemy zmienne, pobieramy słowo sekwencyjnie, tworzymy przyciski i aktualizujemy pasek postępu
+// Inicjalizacja gry – resetujemy zmienne, pobieramy słowo sekwencyjnie i tworzymy przyciski
 async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
   updateProgressBar();
 
   const levels = await loadWords();
-  console.log("levels:", levels); // sprawdź, czy mamy dane z words.json
   word = chooseSequentialWord(levels, questionCount);
-  console.log("Wybrane słowo:", word, "dla pytania", questionCount);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
-  }
   
   displayedWord = [];
   for (let char of word) {
@@ -279,9 +276,9 @@ async function initGame() {
 // Obsługa przycisku podpowiedzi
 hintBtn.addEventListener("click", handleHintClick);
 
-// Rozszerzenie interfejsu Telegram WebApp
+// Telegram WebApp – rozszerzenie interfejsu
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// Uruchomienie gry przy załadowaniu strony
+// Uruchomienie gry po załadowaniu strony
 initGame();
