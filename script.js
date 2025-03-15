@@ -147,9 +147,8 @@ function checkWin() {
       saveGameState();
       updateLevelDisplay();
 
-      // Sprawdzamy, czy zakończono poziom (co 100 pytań) i czy nowy poziom jest parzysty
-      if (questionCount % 100 === 0 && currentLevel % 2 === 0) {
-        // Wywołanie reklamy In-App Interstitial z Monetag
+      // Reklama In-App Interstitial wyświetlana po 3 pytaniach
+      if (questionCount > 0 && questionCount % 3 === 0) {
         show_9076387({ 
           type: 'inApp', 
           inAppSettings: { 
