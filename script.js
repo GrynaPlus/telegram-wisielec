@@ -144,11 +144,27 @@ function checkWin() {
     disableAllLetterButtons();
     setTimeout(() => {
       questionCount++;
-      saveGameState(); // Zapis stanu gry po poprawnej odpowiedzi
+      saveGameState();
+      updateLevelDisplay();
+
+      // Sprawdzamy, czy zakończono poziom (co 100 pytań) i czy nowy poziom jest parzysty
+      if (questionCount % 100 === 0 && currentLevel % 2 === 0) {
+        // Wywołanie reklamy In-App Interstitial z Monetag
+        show_9076387({ 
+          type: 'inApp', 
+          inAppSettings: { 
+            frequency: 1, 
+            capping: 0.1, 
+            interval: 30, 
+            timeout: 1, 
+            everyPage: false 
+          } 
+        });
+      }
+      
       if (questionCount >= 100 * maxLevel) {
         messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
       } else {
-        updateLevelDisplay();
         initGame();
       }
     }, 2000);
@@ -244,14 +260,14 @@ function handleHintClick() {
 
 // Symulacja reklamy Rewarded Ad z sieci partnerskiej
 function showRewardedAd(callback) {
-    console.log("Pokazuję reklamę Rewarded...");
-    show_9076387().then(() => {
-        console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
-        if (callback) callback();
-    }).catch((err) => {
-        console.warn("Błąd ładowania reklamy Rewarded:", err);
-        alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
-    });
+  console.log("Pokazuję reklamę Rewarded...");
+  show_9076387().then(() => {
+    console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
+    if (callback) callback();
+  }).catch((err) => {
+    console.warn("Błąd ładowania reklamy Rewarded:", err);
+    alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
+  });
 }
 
 // Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie kółka i stworzenie przycisków
