@@ -153,8 +153,8 @@ function checkWin() {
           type: 'inApp', 
           inAppSettings: { 
             frequency: 1, 
-            capping: 0.1, 
-            interval: 30, 
+            capping: 0, 
+            interval: 0, 
             timeout: 1, 
             everyPage: false 
           } 
