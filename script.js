@@ -154,7 +154,7 @@ function checkWin() {
           inAppSettings: { 
             frequency: 1, 
             capping: 0, 
-            interval: 1200, 
+            interval: 0.1, 
             timeout: 1, 
             everyPage: false 
           } 
