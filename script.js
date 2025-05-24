@@ -57,7 +57,7 @@ const maxWrong = 3; // Użytkownik przegrywa po 3 błędach
 let userName = "";
 let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
-let currentLevel = Math.floor(questionCount / 100) + 1;
+currentLevel = Math.floor(questionCount / 100) + 1;
 
 // Pobieranie elementów DOM
 const wordContainerEl = document.getElementById("word-container");
@@ -299,7 +299,6 @@ function showRewardedAd(callback) {
 
 // Inicjalizacja gry
 async async function initGame() {
-  console.log('[DEBUG] initGame started');
   wrongGuesses = 0;
   messageEl.textContent = "";
 
@@ -307,7 +306,6 @@ async async function initGame() {
   updateLevelDisplay();
 
   const levels = await loadWords();
-  console.log('[DEBUG] levels loaded:', levels);
   word = chooseSequentialWord(levels, questionCount);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
 
