@@ -1,315 +1,137 @@
+// ===== Gry Wisielec z Google Sheets =====
 
-// ====== Google Sheets Integration ======
+// ---- Konfiguracja Google Sheets ----
 const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
-let userName = localStorage.getItem("userName") || "";
 
+// ---- Zmienne globalne gry ----
+let word = "";
+let displayedWord = [];
+let wrongGuesses = 0;
+const maxWrong = 3;
+let questionCount = 0;
+let currentLevel = 1;
+let userName = "";
+
+// ---- Elementy DOM ----
+const usernameInputEl    = document.getElementById("username-input");
+const setUsernameBtn     = document.getElementById("set-username-btn");
+const usernameDisplayEl  = document.getElementById("username-display");
+const usernameContainerEl= document.getElementById("username-container");
+
+const wordContainerEl    = document.getElementById("word-container");
+const lettersContainerEl = document.getElementById("letters-container");
+const messageEl          = document.getElementById("message");
+const hintBtn            = document.getElementById("hint-btn");
+const levelDisplayEl     = document.getElementById("level-display");
+
+// ---- Funkcja do wysyÅki danych ----
 function sendUserData() {
   const data = new URLSearchParams();
   data.append("username", userName);
   data.append("level", currentLevel);
   fetch(G_SHEETS_URL, { method: "POST", body: data })
-    .then(() => console.log("Dane wysłane do Sheets"))
-    .catch(err => console.error("Błąd wysyłki:", err));
+    .then(() => console.log("â Dane wysÅane do Sheets"))
+    .catch(err => console.error("â BÅÄd wysyÅki:", err));
 }
 
-// On load, if username exists, hide input and start game & send data
-window.addEventListener("load", () => {
-  if (userName) {
-    document.getElementById("username-display").textContent = `Witaj, ${userName}!`;
-    document.getElementById("username-container").style.display = "none";
-    if (typeof initGame === "function") initGame();
-    sendUserData();
-  }
-});
-
-// Globalne zmienne gry
-let word = "";
-let displayedWord = [];
-let wrongGuesses = 0;
-const maxWrong = 3; // Użytkownik przegrywa po 3 błędach
-let userName = "";
-let questionCount = 0; // Numer bieżącego pytania
-const maxLevel = 10;
-let currentLevel = Math.floor(questionCount / 100) + 1;
-
-// Pobieranie elementów DOM
-const wordContainerEl = document.getElementById("word-container");
-const lettersContainerEl = document.getElementById("letters-container");
-const messageEl = document.getElementById("message");
-const hintBtn = document.getElementById("hint-btn");
-const levelDisplayEl = document.getElementById("level-display");
-
-const usernameInputEl = document.getElementById("username-input");
-const setUsernameBtn = document.getElementById("set-username-btn");
-const usernameDisplayEl = document.getElementById("username-display");
-const usernameContainerEl = document.getElementById("username-container");
-
-const progressBar = document.querySelector(".progress-bar");
-const circumference = 2 * Math.PI * 45; // Obwód okręgu o promieniu 45
-
-// Sprawdzenie, czy nazwa użytkownika jest zapisana w localStorage
-if (localStorage.getItem("userName")) {
-  userName = localStorage.getItem("userName");
-  usernameDisplayEl.textContent = "Witaj, " + userName + "!";
-  usernameContainerEl.style.display = "none";
-}
-
-// Ustawienie nazwy użytkownika
-setUsernameBtn.addEventListener("click", function () {
-  // Save username and integrate with Sheets
-  userName = usernameInputEl.value.trim();
-  if (!userName) return;
-  localStorage.setItem("userName", userName);
-  document.getElementById("username-display").textContent = `Witaj, ${userName}!`;
-  document.getElementById("username-container").style.display = "none";
-  initGame();
-  sendUserData();
-  return; // end listener
-
-  userName = usernameInputEl.value.trim();
-  if (userName !== "") {
-    localStorage.setItem("userName", userName);
-    usernameDisplayEl.textContent = "Witaj, " + userName + "!";
-    usernameContainerEl.style.display = "none";
-  }
-});
-
-// Aktualizacja wyświetlania poziomu oraz numeru pytania w danym poziomie
-function updateLevelDisplay() {
-  currentLevel = Math.floor(questionCount / 100) + 1;
-  const questionInLevel = (questionCount % 100) + 1;
-  levelDisplayEl.textContent = "Poziom: " + currentLevel + " (" + questionInLevel + "/100)";
-}
-updateLevelDisplay();
-
-// Przywrócenie zapisanego stanu gry (questionCount) z localStorage, jeśli istnieje
-if (localStorage.getItem("questionCount")) {
-  questionCount = parseInt(localStorage.getItem("questionCount"), 10);
-  updateLevelDisplay();
-}
-
-// Funkcja zapisująca stan gry
-function saveGameState() {
-  localStorage.setItem("questionCount", questionCount);
-}
-
-// Zapis stanu gry przy zamykaniu
-window.addEventListener("beforeunload", saveGameState);
-
-// Ładowanie słów
+// ---- Åadowanie sÅÃ³w ----
 async function loadWords() {
-  try {
-    const response = await fetch('words.json');
-    if (!response.ok) throw new Error("Nie udało się wczytać pliku words.json");
-    const data = await response.json();
-    return data.levels;
-  } catch (error) {
-    console.error("Błąd przy pobieraniu słów:", error);
-    return [];
-  }
+  const res = await fetch("words.json");
+  const json = await res.json();
+  return json.levels;
 }
 
-// Wybór słowa
-function chooseSequentialWord(levels, qCount) {
-  const level = Math.floor(qCount / 100) + 1;
-  const index = qCount % 100;
-  const levelObj = levels.find(l => l.level === level);
-  if (!levelObj || levelObj.words.length === 0) return "";
-  if (index >= levelObj.words.length) return levelObj.words[levelObj.words.length - 1].toLowerCase();
-  return levelObj.words[index].toLowerCase();
-}
-
-// Reset koła postępu
-function resetProgress() {
+// ---- Inicjalizacja gry ----
+async function initGame() {
+  const levels = await loadWords();
+  currentLevel = Math.floor(questionCount / 100) + 1;
+  const levelData = levels[currentLevel - 1] || levels[0];
+  word = levelData.words[Math.floor(Math.random() * levelData.words.length)].toLowerCase();
+  displayedWord = Array.from(word).map(ch => /[a-zÄÄÄÅÅÃ³ÅÅºÅ¼]/i.test(ch) ? "_" : ch);
   wrongGuesses = 0;
-  progressBar.style.strokeDashoffset = circumference;
+  renderWord();
+  updateLevelDisplay();
+  createLetterButtons();
 }
 
-// Aktualizacja koła postępu
-function updateProgressBar() {
-  const progress = wrongGuesses / maxWrong;
-  const offset = circumference * (1 - progress);
-  progressBar.style.strokeDashoffset = offset;
+// ---- Renderowanie sÅowa ----
+function renderWord() {
+  wordContainerEl.textContent = displayedWord.join(" ");
 }
 
-// Wyświetlanie słowa
-function updateDisplayedWord() {
-  let display = "";
-  displayedWord.forEach(letter => {
-    display += letter + " ";
-  });
-  wordContainerEl.textContent = display.trim();
+// ---- Aktualizacja poziomu ----
+function updateLevelDisplay() {
+  levelDisplayEl.textContent = `Poziom: ${currentLevel}`;
+  sendUserData();
 }
 
-// Kliknięcie litery
-function handleLetterClick(e) {
-  const btn = e.target;
-  const letter = btn.textContent.toLowerCase();
-  btn.disabled = true;
-
-  if (word.includes(letter)) {
-    for (let i = 0; i < word.length; i++) {
-      if (word[i] === letter) {
-        displayedWord[i] = letter;
-      }
-    }
-    updateDisplayedWord();
-    checkWin();
-  } else {
-    wrongGuesses++;
-    updateProgressBar();
-    checkLoss();
-  }
-}
-
-// Sprawdzenie wygranej
-function checkWin() {
-  if (!displayedWord.includes("_")) {
-    messageEl.textContent = "Gratulacje, " + (userName || "graczu") + "! Wygrałeś!";
-    disableAllLetterButtons();
-
-    setTimeout(() => {
-      questionCount++;
-      saveGameState();
-      updateLevelDisplay();
-
-      // Reklama po każdych 3 pytaniach
-      if (questionCount % 3 === 0) {
-   show_9373354({
-  type: 'inApp',
-  inAppSettings: {
-    frequency: 1,
-    capping: 0,
-    interval: 120,
-    timeout: 1,
-    everyPage: false
-  }
-});
-      }
-
-      if (questionCount >= 100 * maxLevel) {
-        messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
-      } else {
-        initGame();
-      }
-    }, 2000);
-  }
-}
-
-// Sprawdzenie przegranej
-function checkLoss() {
-  if (wrongGuesses >= maxWrong) {
-    disableAllLetterButtons();
-    messageEl.textContent = "Przegrałeś!";
-    setTimeout(() => {
-      initGame();
-    }, 2000);
-  }
-}
-
-// Wyłączenie przycisków liter
-function disableAllLetterButtons() {
-  const buttons = document.querySelectorAll(".letter-btn");
-  buttons.forEach(btn => btn.disabled = true);
-}
-
-// Mieszanie tablicy
-function shuffleArray(array) {
-  let currentIndex = array.length, temporaryValue, randomIndex;
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    temporaryValue = array[currentIndex];
-    array[currentIndex] = array[randomIndex];
-    array[randomIndex] = temporaryValue;
-  }
-  return array;
-}
-
-// Tworzenie przycisków liter
+// ---- Tworzenie przyciskÃ³w liter ----
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
-
-  const extendedAlphabet = "abcdefghijklmnopqrstuvwxyząćęłńóśźż";
-  const correctSet = new Set();
-  for (let char of word) {
-    if (/[a-ząćęłńóśźż]/i.test(char)) {
-      correctSet.add(char.toLowerCase());
-    }
-  }
-  const correctLetters = Array.from(correctSet);
-  let remainingLetters = extendedAlphabet.split("").filter(c => !correctSet.has(c));
-  remainingLetters = shuffleArray(remainingLetters);
-
-  const distractorCount = Math.min(5, remainingLetters.length);
-  const distractorLetters = remainingLetters.slice(0, distractorCount);
-  const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
-
-  for (let letter of availableLetters) {
+  for (let i = 97; i <= 122; i++) {
+    const char = String.fromCharCode(i);
     const btn = document.createElement("button");
-    btn.textContent = letter;
-    btn.className = "letter-btn";
-    btn.addEventListener("click", handleLetterClick);
+    btn.textContent = char;
+    btn.disabled = displayedWord.includes(char) || wrongGuesses >= maxWrong;
+    btn.addEventListener("click", () => handleGuess(char, btn));
     lettersContainerEl.appendChild(btn);
   }
 }
 
-// Podpowiedź
-function revealHint() {
-  for (let i = 0; i < word.length; i++) {
-    if (displayedWord[i] === "_") {
-      displayedWord[i] = word[i];
-      updateDisplayedWord();
-      break;
+// ---- ObsÅuga zgadywania ----
+function handleGuess(ch, btn) {
+  btn.disabled = true;
+  if (word.includes(ch)) {
+    for (let i = 0; i < word.length; i++) {
+      if (word[i] === ch) displayedWord[i] = ch;
+    }
+    renderWord();
+    if (!displayedWord.includes("_")) {
+      messageEl.textContent = "Gratulacje!";
+      questionCount++;
+      saveGameState();
+      initGame();
+    }
+  } else {
+    wrongGuesses++;
+    messageEl.textContent = `BÅÄdÃ³w: ${wrongGuesses}/${maxWrong}`;
+    if (wrongGuesses >= maxWrong) {
+      messageEl.textContent = `PrzegraÅeÅ! HasÅo: ${word}`;
+      questionCount++;
+      saveGameState();
+      setTimeout(initGame, 2000);
     }
   }
-  checkWin();
 }
 
-function handleHintClick() {
-  if (displayedWord.includes("_")) {
-    showRewardedAd(() => {
-      revealHint();
-    });
+// ---- Zapis i odczyt stanu gry ----
+function saveGameState() {
+  localStorage.setItem("questionCount", questionCount);
+}
+function loadGameState() {
+  questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
+}
+
+// ---- ObsÅuga nazwy uÅ¼ytkownika ----
+window.addEventListener("load", () => {
+  loadGameState();
+  const savedName = localStorage.getItem("userName");
+  if (savedName) {
+    userName = savedName;
+    usernameDisplayEl.textContent = `Witaj, ${userName}!`;
+    usernameContainerEl.style.display = "none";
+    initGame();
+    sendUserData();
   }
-}
+});
 
-function showRewardedAd(callback) {
-  console.log("Pokazuję reklamę Rewarded...");
-  show_9373354();
-  if (callback) callback();
-}
-
-// Inicjalizacja gry
-async function initGame() {
-  wrongGuesses = 0;
-  messageEl.textContent = "";
-
-  resetProgress();
-  updateLevelDisplay();
-
-  const levels = await loadWords();
-  word = chooseSequentialWord(levels, questionCount);
-  console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
-
-  displayedWord = [];
-  for (let char of word) {
-    if (/[a-ząćęłńóśźż]/i.test(char)) {
-      displayedWord.push("_");
-    } else {
-      displayedWord.push(char);
-    }
-  }
-  updateDisplayedWord();
-  createLetterButtons();
-}
-
-// Obsługa podpowiedzi
-hintBtn.addEventListener("click", handleHintClick);
-
-// Rozszerzenie Telegram WebApp
-const tg = window.Telegram.WebApp;
-tg.expand();
-
-// Start gry
-initGame();
+setUsernameBtn.addEventListener("click", () => {
+  const val = usernameInputEl.value.trim();
+  if (!val) return;
+  userName = val;
+  localStorage.setItem("userName", userName);
+  usernameDisplayEl.textContent = `Witaj, ${userName}!`;
+  usernameContainerEl.style.display = "none";
+  initGame();
+  sendUserData();
+});
