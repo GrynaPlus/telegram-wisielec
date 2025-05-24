@@ -1,4 +1,3 @@
-
 // ===== Gry Wisielec z Google Sheets =====
 
 // ---- Konfiguracja Google Sheets ----
@@ -9,23 +8,23 @@ let word = "";
 let displayedWord = [];
 let wrongGuesses = 0;
 const maxWrong = 3;
-let questionCount = 0;
+let questionCount = 0;    // łącznie pytań już rozgryzionych
 let currentLevel = 1;
 let userName = "";
 
 // ---- Elementy DOM ----
-const usernameInputEl    = document.getElementById("username-input");
-const setUsernameBtn     = document.getElementById("set-username-btn");
-const usernameDisplayEl  = document.getElementById("username-display");
-const usernameContainerEl= document.getElementById("username-container");
+const usernameInputEl     = document.getElementById("username-input");
+const setUsernameBtn      = document.getElementById("set-username-btn");
+const usernameDisplayEl   = document.getElementById("username-display");
+const usernameContainerEl = document.getElementById("username-container");
 
-const wordContainerEl    = document.getElementById("word-container");
-const lettersContainerEl = document.getElementById("letters-container");
-const messageEl          = document.getElementById("message");
-const hintBtn            = document.getElementById("hint-btn");
-const levelDisplayEl     = document.getElementById("level-display");
+const wordContainerEl     = document.getElementById("word-container");
+const lettersContainerEl  = document.getElementById("letters-container");
+const messageEl           = document.getElementById("message");
+const hintBtn             = document.getElementById("hint-btn");
+const levelDisplayEl      = document.getElementById("level-display");
 
-// ---- Funkcja do wysyłki danych ----
+// ---- Funkcja wysyłająca dane do Google Sheets (URL-encoded, brak CORS) ----
 function sendUserData() {
   const data = new URLSearchParams();
   data.append("username", userName);
@@ -35,7 +34,7 @@ function sendUserData() {
     .catch(err => console.error("❌ Błąd wysyłki:", err));
 }
 
-// ---- Ładowanie słów ----
+// ---- Wczytywanie słów ----
 async function loadWords() {
   const res = await fetch("words.json");
   const json = await res.json();
@@ -47,9 +46,14 @@ async function initGame() {
   const levels = await loadWords();
   currentLevel = Math.floor(questionCount / 100) + 1;
   const levelData = levels[currentLevel - 1] || levels[0];
+
+  // losujemy słowo
   word = levelData.words[Math.floor(Math.random() * levelData.words.length)].toLowerCase();
+  // przygotowujemy podkreślenia
   displayedWord = Array.from(word).map(ch => /[a-ząćęłńóśźż]/i.test(ch) ? "_" : ch);
   wrongGuesses = 0;
+  messageEl.textContent = "";
+
   renderWord();
   updateLevelDisplay();
   createLetterButtons();
@@ -60,40 +64,45 @@ function renderWord() {
   wordContainerEl.textContent = displayedWord.join(" ");
 }
 
-// ---- Aktualizacja poziomu ----
+// ---- Aktualizacja wyświetlania poziomu i numeru pytania ----
 function updateLevelDisplay() {
-  levelDisplayEl.textContent = `Poziom: ${currentLevel}`;
-  sendUserData();
+  const questionInLevel = (questionCount % 100) + 1;
+  levelDisplayEl.textContent = `Poziom: ${currentLevel} (${questionInLevel}/100)`;
+  sendUserData();  // wyślij za każdym razem, gdy poziom (lub pytanie) się zmienia
 }
 
 // ---- Tworzenie przycisków liter ----
 function createLetterButtons() {
+  const polish = ["a","ą","b","c","ć","d","e","ę","f","g","h","i","j","k","l","ł","m","n","ń","o","ó","p","q","r","s","ś","t","u","v","w","x","y","z","ź","ż"];
   lettersContainerEl.innerHTML = "";
-  for (let i = 97; i <= 122; i++) {
-    const char = String.fromCharCode(i);
+  polish.forEach(ch => {
     const btn = document.createElement("button");
-    btn.textContent = char;
-    btn.disabled = displayedWord.includes(char) || wrongGuesses >= maxWrong;
-    btn.addEventListener("click", () => handleGuess(char, btn));
+    btn.textContent = ch;
+    btn.disabled = displayedWord.includes(ch) || wrongGuesses >= maxWrong;
+    btn.classList.add("letter-btn");
+    btn.addEventListener("click", () => handleGuess(ch, btn));
     lettersContainerEl.appendChild(btn);
-  }
+  });
 }
 
-// ---- Obsługa zgadywania ----
+// ---- Obsługa zgadnięcia litery ----
 function handleGuess(ch, btn) {
   btn.disabled = true;
   if (word.includes(ch)) {
+    // odkrywamy litery
     for (let i = 0; i < word.length; i++) {
       if (word[i] === ch) displayedWord[i] = ch;
     }
     renderWord();
+    // sprawdzamy wygraną
     if (!displayedWord.includes("_")) {
-      messageEl.textContent = "Gratulacje!";
+      messageEl.textContent = "Gratulacje! 😊";
       questionCount++;
       saveGameState();
-      initGame();
+      setTimeout(initGame, 1000);
     }
   } else {
+    // błąd
     wrongGuesses++;
     messageEl.textContent = `Błędów: ${wrongGuesses}/${maxWrong}`;
     if (wrongGuesses >= maxWrong) {
@@ -105,7 +114,7 @@ function handleGuess(ch, btn) {
   }
 }
 
-// ---- Zapis i odczyt stanu gry ----
+// ---- Zapis i odczyt stanu gry (liczba pytań) ----
 function saveGameState() {
   localStorage.setItem("questionCount", questionCount);
 }
@@ -116,9 +125,9 @@ function loadGameState() {
 // ---- Obsługa nazwy użytkownika ----
 window.addEventListener("load", () => {
   loadGameState();
-  const savedName = localStorage.getItem("userName");
-  if (savedName) {
-    userName = savedName;
+  const saved = localStorage.getItem("userName");
+  if (saved) {
+    userName = saved;
     usernameDisplayEl.textContent = `Witaj, ${userName}!`;
     usernameContainerEl.style.display = "none";
     initGame();
@@ -136,4 +145,3 @@ setUsernameBtn.addEventListener("click", () => {
   initGame();
   sendUserData();
 });
-
