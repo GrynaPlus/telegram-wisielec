@@ -54,21 +54,19 @@ if (localStorage.getItem("questionCount")) {
   updateLevelDisplay();
 }
 
-// Funkcja zapisująca stan gry (aktualny poziom)
+// Funkcja zapisująca stan gry
 function saveGameState() {
   localStorage.setItem("questionCount", questionCount);
 }
 
-// Zapis stanu gry przy opuszczaniu mini aplikacji Telegram
+// Zapis stanu gry przy zamykaniu
 window.addEventListener("beforeunload", saveGameState);
 
-// Funkcja do pobierania słów z pliku words.json
+// Ładowanie słów
 async function loadWords() {
   try {
     const response = await fetch('words.json');
-    if (!response.ok) {
-      throw new Error("Nie udało się wczytać pliku words.json");
-    }
+    if (!response.ok) throw new Error("Nie udało się wczytać pliku words.json");
     const data = await response.json();
     return data.levels;
   } catch (error) {
@@ -77,37 +75,30 @@ async function loadWords() {
   }
 }
 
-/*
-  Wybieramy słowo sekwencyjnie.
-  Dla danego poziomu (currentLevel) wybieramy słowo o indeksie = questionCount % 100.
-*/
+// Wybór słowa
 function chooseSequentialWord(levels, qCount) {
   const level = Math.floor(qCount / 100) + 1;
   const index = qCount % 100;
   const levelObj = levels.find(l => l.level === level);
-  if (!levelObj || levelObj.words.length === 0) {
-    return "";
-  }
-  if (index >= levelObj.words.length) {
-    return levelObj.words[levelObj.words.length - 1].toLowerCase();
-  }
+  if (!levelObj || levelObj.words.length === 0) return "";
+  if (index >= levelObj.words.length) return levelObj.words[levelObj.words.length - 1].toLowerCase();
   return levelObj.words[index].toLowerCase();
 }
 
-// Reset wskaźnika postępu (koła) na początek rundy
+// Reset koła postępu
 function resetProgress() {
   wrongGuesses = 0;
   progressBar.style.strokeDashoffset = circumference;
 }
 
-// Aktualizacja wskaźnika postępu po błędnej odpowiedzi
+// Aktualizacja koła postępu
 function updateProgressBar() {
   const progress = wrongGuesses / maxWrong;
   const offset = circumference * (1 - progress);
   progressBar.style.strokeDashoffset = offset;
 }
 
-// Aktualizacja wyświetlanego słowa
+// Wyświetlanie słowa
 function updateDisplayedWord() {
   let display = "";
   displayedWord.forEach(letter => {
@@ -116,7 +107,7 @@ function updateDisplayedWord() {
   wordContainerEl.textContent = display.trim();
 }
 
-// Obsługa kliknięcia przycisku litery
+// Kliknięcie litery
 function handleLetterClick(e) {
   const btn = e.target;
   const letter = btn.textContent.toLowerCase();
@@ -137,18 +128,15 @@ function handleLetterClick(e) {
   }
 }
 
-// Sprawdzenie wygranej – gdy nie ma już "_" w wyświetlanym słowie
+// Sprawdzenie wygranej
 function checkWin() {
   if (!displayedWord.includes("_")) {
     messageEl.textContent = "Gratulacje, " + (userName || "graczu") + "! Wygrałeś!";
     disableAllLetterButtons();
-    setTimeout(() => {
-      questionCount++;
-      saveGameState();
-      updateLevelDisplay();
 
-      // Reklama In-App Interstitial wyświetlana po 3 pytaniach
-      if (questionCount > 0 && questionCount % 3 === 0) {
+    setTimeout(() => {
+      // Reklama co 3 pytania (przed inkrementacją questionCount)
+      if ((questionCount + 1) % 3 === 0) {
         show_9373354({ 
           type: 'inApp', 
           inAppSettings: { 
@@ -160,7 +148,11 @@ function checkWin() {
           } 
         });
       }
-      
+
+      questionCount++;
+      saveGameState();
+      updateLevelDisplay();
+
       if (questionCount >= 100 * maxLevel) {
         messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
       } else {
@@ -170,11 +162,10 @@ function checkWin() {
   }
 }
 
-// Sprawdzenie przegranej – po osiągnięciu maksymalnej liczby błędów
+// Sprawdzenie przegranej
 function checkLoss() {
   if (wrongGuesses >= maxWrong) {
     disableAllLetterButtons();
-    // Bez wyświetlania reklamy – bezpośrednio kontynuujemy grę
     messageEl.textContent = "Przegrałeś!";
     setTimeout(() => {
       initGame();
@@ -182,13 +173,13 @@ function checkLoss() {
   }
 }
 
-// Wyłączenie wszystkich przycisków liter
+// Wyłączenie przycisków liter
 function disableAllLetterButtons() {
   const buttons = document.querySelectorAll(".letter-btn");
   buttons.forEach(btn => btn.disabled = true);
 }
 
-// Funkcja mieszająca tablicę
+// Mieszanie tablicy
 function shuffleArray(array) {
   let currentIndex = array.length, temporaryValue, randomIndex;
   while (currentIndex !== 0) {
@@ -201,10 +192,10 @@ function shuffleArray(array) {
   return array;
 }
 
-// Tworzenie przycisków liter – litery występujące w haśle + 5 dodatkowych liter
+// Tworzenie przycisków liter
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
-  
+
   const extendedAlphabet = "abcdefghijklmnopqrstuvwxyząćęłńóśźż";
   const correctSet = new Set();
   for (let char of word) {
@@ -213,20 +204,13 @@ function createLetterButtons() {
     }
   }
   const correctLetters = Array.from(correctSet);
-  
-  let remainingLetters = [];
-  for (let char of extendedAlphabet) {
-    if (!correctSet.has(char)) {
-      remainingLetters.push(char);
-    }
-  }
+  let remainingLetters = extendedAlphabet.split("").filter(c => !correctSet.has(c));
   remainingLetters = shuffleArray(remainingLetters);
-  
+
   const distractorCount = Math.min(5, remainingLetters.length);
   const distractorLetters = remainingLetters.slice(0, distractorCount);
-  
   const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
-  
+
   for (let letter of availableLetters) {
     const btn = document.createElement("button");
     btn.textContent = letter;
@@ -236,7 +220,7 @@ function createLetterButtons() {
   }
 }
 
-// Funkcja odsłaniająca jedną literę jako podpowiedź
+// Podpowiedź
 function revealHint() {
   for (let i = 0; i < word.length; i++) {
     if (displayedWord[i] === "_") {
@@ -248,7 +232,6 @@ function revealHint() {
   checkWin();
 }
 
-// Obsługa przycisku podpowiedzi
 function handleHintClick() {
   if (displayedWord.includes("_")) {
     showRewardedAd(() => {
@@ -257,7 +240,6 @@ function handleHintClick() {
   }
 }
 
-// Symulacja reklamy Rewarded Ad z sieci partnerskiej
 function showRewardedAd(callback) {
   console.log("Pokazuję reklamę Rewarded...");
   show_9373354().then(() => {
@@ -269,18 +251,18 @@ function showRewardedAd(callback) {
   });
 }
 
-// Inicjalizacja gry – reset zmiennych, pobranie słowa, ustawienie kółka i stworzenie przycisków
+// Inicjalizacja gry
 async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
-  
+
   resetProgress();
   updateLevelDisplay();
-  
+
   const levels = await loadWords();
   word = chooseSequentialWord(levels, questionCount);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
-  
+
   displayedWord = [];
   for (let char of word) {
     if (/[a-ząćęłńóśźż]/i.test(char)) {
@@ -293,12 +275,12 @@ async function initGame() {
   createLetterButtons();
 }
 
-// Obsługa przycisku podpowiedzi
+// Obsługa podpowiedzi
 hintBtn.addEventListener("click", handleHintClick);
 
-// Telegram WebApp – rozszerzenie interfejsu
+// Rozszerzenie Telegram WebApp
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// Uruchomienie gry po załadowaniu strony
+// Start gry
 initGame();
