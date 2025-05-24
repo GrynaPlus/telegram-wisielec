@@ -1,112 +1,26 @@
 
-// ======== GRYNA+ Mini Gra Wisielec – poprawka obsługi nazwy i wysyłki ========
-
-// ---- GLOBAL CONFIG ----
+// ====== Google Sheets Integration ======
 const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
-
-// ---- DANE UŻYTKOWNIKA ----
 let userName = localStorage.getItem("userName") || "";
 
-// ---- Wysyłka do Google Sheets (URL‑encoded, brak CORS) ----
 function sendUserData() {
-  try {
-    const data = new URLSearchParams();
-    data.append("username", userName);
-    data.append("level", typeof currentLevel !== "undefined" ? currentLevel : "");
-
-    fetch(G_SHEETS_URL, { method: "POST", body: data })
-      .then(() => console.log("Dane wysłane do Sheets"))
-      .catch(err => console.error("Błąd wysyłki:", err));
-  } catch(e) {
-    console.error("sendUserData error:", e);
-  }
-}
-
-// ---- Inicjalizacja po załadowaniu strony ----
-window.addEventListener("load", () => {
-  const input  = document.getElementById("username-input");
-  const button = document.getElementById("set-username-btn");
-  const display= document.getElementById("username-display");
-  const container = document.getElementById("username-container");
-
-  if (!input || !button) { console.warn("Brak elementów nazwy – sprawdź HTML"); return; }
-
-  // Jeśli nazwa już zapisana, ukryj pole i startuj grę
-  if (userName) {
-    display.textContent = `Witaj, ${userName}!`;
-    container.style.display = "none";
-    try { if (typeof initGame === "function") initGame(); } catch{}
-    sendUserData();
-  }
-
-  button.addEventListener("click", () => {
-    const val = input.value.trim();
-    if (!val) return;
-    userName = val;
-    localStorage.setItem("userName", userName);
-
-    display.textContent = `Witaj, ${userName}!`;
-    container.style.display = "none";
-
-    sendUserData();
-    try { if (typeof initGame === "function") initGame(); } catch{}
-  });
-});
-
-
-
-let currentLevel = 1;
-
-window.onload = () => {
-  const savedUsername = localStorage.getItem("username");
-  if (savedUsername) {
-    username = savedUsername;
-    document.getElementById("username-display").innerText = "Grasz jako: " + username;
-    document.getElementById("username-input").value = username;
-  }
-
-  const savedLevel = parseInt(localStorage.getItem("level")) || 1;
-  currentLevel = savedLevel;
-  document.getElementById("level-display").innerText = "Poziom: " + currentLevel;
-
-  initGame();
-};
-
-document.getElementById("set-username-btn").addEventListener("click", () => {
-  const input = document.getElementById("username-input").value.trim();
-  if (input.length > 0) {
-    username = input;
-    document.getElementById("username-display").innerText = "Grasz jako: " + username;
-    localStorage.setItem("username", username);
-    sendUserData(); // wysyłanie do Google Sheets
-    initGame(); // uruchomienie gry po ustawieniu nazwy
-  }
-});
-
-function saveLevel(level) {
-  sendUserData(); // automatyczne wysłanie danych po aktualizacji poziomu
-  currentLevel = level;
-  localStorage.setItem("level", level);
-  document.getElementById("level-display").innerText = "Poziom: " + level;
-}
-
-
-function sendUserData() {
-  const url = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
   const data = new URLSearchParams();
-  data.append("username", username);
+  data.append("username", userName);
   data.append("level", currentLevel);
-  fetch(url, { method: "POST", body: data })
+  fetch(G_SHEETS_URL, { method: "POST", body: data })
     .then(() => console.log("Dane wysłane do Sheets"))
     .catch(err => console.error("Błąd wysyłki:", err));
 }
-),
-    headers: {
-      "Content-Type": "application/json"
-    }
-  }).then(res => console.log("Dane wysłane:", res.status));
-}
 
+// On load, if username exists, hide input and start game & send data
+window.addEventListener("load", () => {
+  if (userName) {
+    document.getElementById("username-display").textContent = `Witaj, ${userName}!`;
+    document.getElementById("username-container").style.display = "none";
+    if (typeof initGame === "function") initGame();
+    sendUserData();
+  }
+});
 
 // Globalne zmienne gry
 let word = "";
@@ -116,7 +30,7 @@ const maxWrong = 3; // Użytkownik przegrywa po 3 błędach
 let userName = "";
 let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
-currentLevel = Math.floor(questionCount / 100) + 1;
+let currentLevel = Math.floor(questionCount / 100) + 1;
 
 // Pobieranie elementów DOM
 const wordContainerEl = document.getElementById("word-container");
@@ -142,6 +56,16 @@ if (localStorage.getItem("userName")) {
 
 // Ustawienie nazwy użytkownika
 setUsernameBtn.addEventListener("click", function () {
+  // Save username and integrate with Sheets
+  userName = usernameInputEl.value.trim();
+  if (!userName) return;
+  localStorage.setItem("userName", userName);
+  document.getElementById("username-display").textContent = `Witaj, ${userName}!`;
+  document.getElementById("username-container").style.display = "none";
+  initGame();
+  sendUserData();
+  return; // end listener
+
   userName = usernameInputEl.value.trim();
   if (userName !== "") {
     localStorage.setItem("userName", userName);
@@ -357,7 +281,7 @@ function showRewardedAd(callback) {
 }
 
 // Inicjalizacja gry
-async async function initGame() {
+async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
 
