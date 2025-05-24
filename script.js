@@ -2,9 +2,9 @@
 let word = "";
 let displayedWord = [];
 let wrongGuesses = 0;
-const maxWrong = 3; // Użytkownik przegrywa po 3 błędach
+const maxWrong = 3;
 let userName = "";
-let questionCount = 0; // Numer bieżącego pytania
+let questionCount = 0;
 const maxLevel = 10;
 let currentLevel = Math.floor(questionCount / 100) + 1;
 
@@ -21,9 +21,9 @@ const usernameDisplayEl = document.getElementById("username-display");
 const usernameContainerEl = document.getElementById("username-container");
 
 const progressBar = document.querySelector(".progress-bar");
-const circumference = 2 * Math.PI * 45; // Obwód okręgu o promieniu 45
+const circumference = 2 * Math.PI * 45;
 
-// Sprawdzenie, czy nazwa użytkownika jest zapisana w localStorage
+// Sprawdzenie localStorage
 if (localStorage.getItem("userName")) {
   userName = localStorage.getItem("userName");
   usernameDisplayEl.textContent = "Witaj, " + userName + "!";
@@ -40,7 +40,7 @@ setUsernameBtn.addEventListener("click", function () {
   }
 });
 
-// Aktualizacja wyświetlania poziomu oraz numeru pytania w danym poziomie
+// Wyświetlanie poziomu
 function updateLevelDisplay() {
   currentLevel = Math.floor(questionCount / 100) + 1;
   const questionInLevel = (questionCount % 100) + 1;
@@ -48,18 +48,16 @@ function updateLevelDisplay() {
 }
 updateLevelDisplay();
 
-// Przywrócenie zapisanego stanu gry (questionCount) z localStorage, jeśli istnieje
+// Przywracanie stanu gry
 if (localStorage.getItem("questionCount")) {
   questionCount = parseInt(localStorage.getItem("questionCount"), 10);
   updateLevelDisplay();
 }
 
-// Funkcja zapisująca stan gry
+// Zapis stanu gry
 function saveGameState() {
   localStorage.setItem("questionCount", questionCount);
 }
-
-// Zapis stanu gry przy zamykaniu
 window.addEventListener("beforeunload", saveGameState);
 
 // Ładowanie słów
@@ -85,13 +83,13 @@ function chooseSequentialWord(levels, qCount) {
   return levelObj.words[index].toLowerCase();
 }
 
-// Reset koła postępu
+// Reset koła
 function resetProgress() {
   wrongGuesses = 0;
   progressBar.style.strokeDashoffset = circumference;
 }
 
-// Aktualizacja koła postępu
+// Aktualizacja koła
 function updateProgressBar() {
   const progress = wrongGuesses / maxWrong;
   const offset = circumference * (1 - progress);
@@ -139,16 +137,22 @@ function checkWin() {
       saveGameState();
       updateLevelDisplay();
 
-      // Wyświetl reklamę co każde 3 pytania
-      if (questionCount % 3 === 0) {
-  show_9373354({
-    type: 'inApp',
-    inAppSettings: {
-      capping: 0,
-      everyPage: false
-    }
-  });
-}
+      // REKLAMA CO 3 PYTANIA
+      if (questionCount % 3 === 0 && window.preloadedAd) {
+        show_9373354({
+          type: 'inApp',
+          inAppSettings: {
+            interval: 1,
+            capping: 0,
+            frequency: 1,
+            everyPage: false
+          },
+          onAdDismissed: function () {
+            window.preloadedAd = false;
+            preloadMonetagAd();
+          }
+        });
+      }
 
       if (questionCount >= 100 * maxLevel) {
         messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
@@ -170,7 +174,7 @@ function checkLoss() {
   }
 }
 
-// Wyłączenie przycisków liter
+// Wyłączenie przycisków
 function disableAllLetterButtons() {
   const buttons = document.querySelectorAll(".letter-btn");
   buttons.forEach(btn => btn.disabled = true);
@@ -192,7 +196,6 @@ function shuffleArray(array) {
 // Tworzenie przycisków liter
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
-
   const extendedAlphabet = "abcdefghijklmnopqrstuvwxyząćęłńóśźż";
   const correctSet = new Set();
   for (let char of word) {
@@ -203,7 +206,6 @@ function createLetterButtons() {
   const correctLetters = Array.from(correctSet);
   let remainingLetters = extendedAlphabet.split("").filter(c => !correctSet.has(c));
   remainingLetters = shuffleArray(remainingLetters);
-
   const distractorCount = Math.min(5, remainingLetters.length);
   const distractorLetters = remainingLetters.slice(0, distractorCount);
   const availableLetters = shuffleArray(correctLetters.concat(distractorLetters));
@@ -271,8 +273,33 @@ async function initGame() {
 hintBtn.addEventListener("click", handleHintClick);
 
 // Rozszerzenie Telegram WebApp
-const tg = window.Telegram.WebApp;
-tg.expand();
+const tg = window.Telegram?.WebApp;
+if (tg) tg.expand();
+
+// === REKLAMY MONETAG ===
+window.preloadedAd = false;
+
+function preloadMonetagAd() {
+  show_9373354({
+    type: 'inApp',
+    inAppSettings: {
+      interval: 1,
+      capping: 0,
+      frequency: 1,
+      everyPage: false
+    },
+    onAdAvailable: function () {
+      console.log("Reklama Monetag załadowana");
+      window.preloadedAd = true;
+    },
+    onAdDismissed: function () {
+      console.log("Reklama Monetag zamknięta");
+      window.preloadedAd = false;
+      preloadMonetagAd();
+    }
+  });
+}
 
 // Start gry
+preloadMonetagAd();
 initGame();
