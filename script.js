@@ -1,24 +1,67 @@
 
-// ===== Wysyłanie danych do Google Sheets (formularz URL-encoded) =====
+// ======== GRYNA+ Mini Gra Wisielec – poprawka obsługi nazwy i wysyłki ========
+
+// ---- GLOBAL CONFIG ----
+const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
+
+// ---- DANE UŻYTKOWNIKA ----
+let userName = localStorage.getItem("userName") || "";
+
+// ---- Wysyłka do Google Sheets (URL‑encoded, brak CORS) ----
 function sendUserData() {
-  const url = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
-  const data = new URLSearchParams();
-  data.append("username", userName);
-  data.append("level", currentLevel);
-  fetch(url, { method: "POST", body: data })
-    .then(() => console.log("Dane wysłane do Sheets"))
-    .catch(err => console.error("Błąd wysyłki:", err));
+  try {
+    const data = new URLSearchParams();
+    data.append("username", userName);
+    data.append("level", typeof currentLevel !== "undefined" ? currentLevel : "");
+
+    fetch(G_SHEETS_URL, { method: "POST", body: data })
+      .then(() => console.log("Dane wysłane do Sheets"))
+      .catch(err => console.error("Błąd wysyłki:", err));
+  } catch(e) {
+    console.error("sendUserData error:", e);
+  }
 }
+
+// ---- Inicjalizacja po załadowaniu strony ----
+window.addEventListener("load", () => {
+  const input  = document.getElementById("username-input");
+  const button = document.getElementById("set-username-btn");
+  const display= document.getElementById("username-display");
+  const container = document.getElementById("username-container");
+
+  if (!input || !button) { console.warn("Brak elementów nazwy – sprawdź HTML"); return; }
+
+  // Jeśli nazwa już zapisana, ukryj pole i startuj grę
+  if (userName) {
+    display.textContent = `Witaj, ${userName}!`;
+    container.style.display = "none";
+    try { if (typeof initGame === "function") initGame(); } catch{}
+    sendUserData();
+  }
+
+  button.addEventListener("click", () => {
+    const val = input.value.trim();
+    if (!val) return;
+    userName = val;
+    localStorage.setItem("userName", userName);
+
+    display.textContent = `Witaj, ${userName}!`;
+    container.style.display = "none";
+
+    sendUserData();
+    try { if (typeof initGame === "function") initGame(); } catch{}
+  });
+});
 
 
 
 let currentLevel = 1;
 
 window.onload = () => {
-  const savedUsername = localStorage.getItem("userName");
+  const savedUsername = localStorage.getItem("username");
   if (savedUsername) {
-    userName = savedUsername;
-    document.getElementById("username-display").innerText = "Grasz jako: " + userName;
+    username = savedUsername;
+    document.getElementById("username-display").innerText = "Grasz jako: " + username;
     document.getElementById("username-input").value = username;
   }
 
@@ -33,8 +76,8 @@ document.getElementById("set-username-btn").addEventListener("click", () => {
   const input = document.getElementById("username-input").value.trim();
   if (input.length > 0) {
     username = input;
-    document.getElementById("username-display").innerText = "Grasz jako: " + userName;
-    localStorage.setItem("userName", username);
+    document.getElementById("username-display").innerText = "Grasz jako: " + username;
+    localStorage.setItem("username", username);
     sendUserData(); // wysyłanie do Google Sheets
     initGame(); // uruchomienie gry po ustawieniu nazwy
   }
@@ -48,6 +91,15 @@ function saveLevel(level) {
 }
 
 
+function sendUserData() {
+  const url = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
+  const data = new URLSearchParams();
+  data.append("username", username);
+  data.append("level", currentLevel);
+  fetch(url, { method: "POST", body: data })
+    .then(() => console.log("Dane wysłane do Sheets"))
+    .catch(err => console.error("Błąd wysyłki:", err));
+}
 ),
     headers: {
       "Content-Type": "application/json"
