@@ -141,16 +141,14 @@ function checkWin() {
 
       // Wyświetl reklamę co każde 3 pytania
       if (questionCount % 3 === 0) {
-        show_9373354({
-          type: 'inApp',
-          inAppSettings: {
-            frequency: 1,
-            capping: 0,
-            timeout: 1,
-            everyPage: false
-          }
-        });
-      }
+  show_9373354({
+    type: 'inApp',
+    inAppSettings: {
+      capping: 0,
+      everyPage: false
+    }
+  });
+}
 
       if (questionCount >= 100 * maxLevel) {
         messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
