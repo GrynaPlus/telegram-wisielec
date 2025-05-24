@@ -137,13 +137,16 @@ function checkWin() {
     setTimeout(() => {
       // Reklama co 3 pytania (przed inkrementacją questionCount)
       if ((questionCount + 1) % 3 === 0) {
-        show_9373354({ 
-          type: 'inApp', 
-          inAppSettings: { 
-            timeout: 0, 
-            everyPage: false 
-          } 
-        });
+        show_9373354({
+  type: 'inApp',
+  inAppSettings: {
+    frequency: 0,
+    capping: 0,
+    interval: 0,
+    timeout: 0,
+    everyPage: false
+  }
+});
       }
 
       questionCount++;
