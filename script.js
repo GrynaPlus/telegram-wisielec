@@ -1,3 +1,53 @@
+
+let username = '';
+let currentLevel = 1;
+
+window.onload = () => {
+  const savedUsername = localStorage.getItem("username");
+  if (savedUsername) {
+    username = savedUsername;
+    document.getElementById("username-display").innerText = "Grasz jako: " + username;
+    document.getElementById("username-input").value = username;
+  }
+
+  const savedLevel = parseInt(localStorage.getItem("level")) || 1;
+  currentLevel = savedLevel;
+  document.getElementById("level-display").innerText = "Poziom: " + currentLevel;
+
+  initGame();
+};
+
+document.getElementById("set-username-btn").addEventListener("click", () => {
+  const input = document.getElementById("username-input").value.trim();
+  if (input.length > 0) {
+    username = input;
+    document.getElementById("username-display").innerText = "Grasz jako: " + username;
+    localStorage.setItem("username", username);
+    sendUserData(); // wysyłanie do Google Sheets
+  }
+});
+
+function saveLevel(level) {
+  sendUserData(); // automatyczne wysłanie danych po aktualizacji poziomu
+  currentLevel = level;
+  localStorage.setItem("level", level);
+  document.getElementById("level-display").innerText = "Poziom: " + level;
+}
+
+function sendUserData() {
+  fetch("https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec", {
+    method: "POST",
+    body: JSON.stringify({
+      username: username,
+      level: currentLevel
+    }),
+    headers: {
+      "Content-Type": "application/json"
+    }
+  }).then(res => console.log("Dane wysłane:", res.status));
+}
+
+
 // Globalne zmienne gry
 let word = "";
 let displayedWord = [];
