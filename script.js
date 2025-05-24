@@ -1,12 +1,24 @@
 
-let username = '';
+// ===== Wysyłanie danych do Google Sheets (formularz URL-encoded) =====
+function sendUserData() {
+  const url = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
+  const data = new URLSearchParams();
+  data.append("username", userName);
+  data.append("level", currentLevel);
+  fetch(url, { method: "POST", body: data })
+    .then(() => console.log("Dane wysłane do Sheets"))
+    .catch(err => console.error("Błąd wysyłki:", err));
+}
+
+
+
 let currentLevel = 1;
 
 window.onload = () => {
-  const savedUsername = localStorage.getItem("username");
+  const savedUsername = localStorage.getItem("userName");
   if (savedUsername) {
-    username = savedUsername;
-    document.getElementById("username-display").innerText = "Grasz jako: " + username;
+    userName = savedUsername;
+    document.getElementById("username-display").innerText = "Grasz jako: " + userName;
     document.getElementById("username-input").value = username;
   }
 
@@ -21,8 +33,8 @@ document.getElementById("set-username-btn").addEventListener("click", () => {
   const input = document.getElementById("username-input").value.trim();
   if (input.length > 0) {
     username = input;
-    document.getElementById("username-display").innerText = "Grasz jako: " + username;
-    localStorage.setItem("username", username);
+    document.getElementById("username-display").innerText = "Grasz jako: " + userName;
+    localStorage.setItem("userName", username);
     sendUserData(); // wysyłanie do Google Sheets
     initGame(); // uruchomienie gry po ustawieniu nazwy
   }
@@ -36,15 +48,6 @@ function saveLevel(level) {
 }
 
 
-function sendUserData() {
-  const url = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
-  const data = new URLSearchParams();
-  data.append("username", username);
-  data.append("level", currentLevel);
-  fetch(url, { method: "POST", body: data })
-    .then(() => console.log("Dane wysłane do Sheets"))
-    .catch(err => console.error("Błąd wysyłki:", err));
-}
 ),
     headers: {
       "Content-Type": "application/json"
