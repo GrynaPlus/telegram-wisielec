@@ -149,7 +149,7 @@ function checkWin() {
 
       // Reklama In-App Interstitial wyświetlana po 3 pytaniach
       if (questionCount > 0 && questionCount % 3 === 0) {
-        show_9076387({ 
+        show_9373354({ 
           type: 'inApp', 
           inAppSettings: { 
             frequency: 1, 
@@ -260,7 +260,7 @@ function handleHintClick() {
 // Symulacja reklamy Rewarded Ad z sieci partnerskiej
 function showRewardedAd(callback) {
   console.log("Pokazuję reklamę Rewarded...");
-  show_9076387().then(() => {
+  show_9373354().then(() => {
     console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
     if (callback) callback();
   }).catch((err) => {
