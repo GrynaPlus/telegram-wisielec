@@ -7,7 +7,6 @@ let userName = "";
 let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
 let currentLevel = Math.floor(questionCount / 100) + 1;
-let adShownThisQuestion = false; // Flaga kontrolująca reklamę
 
 // Pobieranie elementów DOM
 const wordContainerEl = document.getElementById("word-container");
@@ -136,9 +135,12 @@ function checkWin() {
     disableAllLetterButtons();
 
     setTimeout(() => {
-      // Reklama co 3 pytania (tylko raz na pytanie)
-      if ((questionCount + 1) % 3 === 0 && !adShownThisQuestion) {
-        adShownThisQuestion = true;
+      questionCount++;
+      saveGameState();
+      updateLevelDisplay();
+
+      // Reklama po każdych 3 pytaniach
+      if (questionCount % 3 === 0) {
         show_9373354({
           type: 'inApp',
           inAppSettings: {
@@ -147,10 +149,6 @@ function checkWin() {
           }
         });
       }
-
-      questionCount++;
-      saveGameState();
-      updateLevelDisplay();
 
       if (questionCount >= 100 * maxLevel) {
         messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
@@ -247,7 +245,6 @@ function showRewardedAd(callback) {
 
 // Inicjalizacja gry
 async function initGame() {
-  adShownThisQuestion = false; // Reset flagi reklamy
   wrongGuesses = 0;
   messageEl.textContent = "";
 
