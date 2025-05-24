@@ -1,4 +1,4 @@
-// ===== Gry Wisielec z Google Sheets i Reklamą =====
+// ===== Wisielec z Google Sheets, Reklamą i inteligentnym zestawem liter =====
 
 // ---- Konfiguracja Google Sheets ----
 const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
@@ -37,8 +37,7 @@ function sendUserData() {
 // ---- Wczytywanie słów ----
 async function loadWords() {
   const res = await fetch("words.json");
-  const json = await res.json();
-  return json.levels;
+  return (await res.json()).levels;
 }
 
 // ---- Inicjalizacja gry ----
@@ -67,11 +66,26 @@ function updateLevelDisplay() {
   sendUserData();
 }
 
-// ---- Tworzenie przycisków liter ----
+// ---- Tworzenie przycisków liter z ograniczeniem dla krótkich słów ----
 function createLetterButtons() {
-  const polish = ["a","ą","b","c","ć","d","e","ę","f","g","h","i","j","k","l","ł","m","n","ń","o","ó","p","q","r","s","ś","t","u","v","w","x","y","z","ź","ż"];
+  // pełny alfabet polski
+  const alphabet = ["a","ą","b","c","ć","d","e","ę","f","g","h","i","j","k","l","ł","m","n","ń","o","ó","p","q","r","s","ś","t","u","v","w","x","y","z","ź","ż"];
+  let choices;
+
+  if (word.length <= 5) {
+    // wszystkie litery słowa
+    const unique = Array.from(new Set(word.split("")));
+    // dobieramy losowo pozostałe, by dojść do 10
+    const pool = alphabet.filter(ch => !unique.includes(ch));
+    shuffle(pool);
+    const needed = pool.slice(0, Math.max(0, 10 - unique.length));
+    choices = unique.concat(needed);
+  } else {
+    choices = alphabet;
+  }
+
   lettersContainerEl.innerHTML = "";
-  polish.forEach(ch => {
+  choices.forEach(ch => {
     const btn = document.createElement("button");
     btn.textContent = ch;
     btn.classList.add("letter-btn");
@@ -85,9 +99,9 @@ function createLetterButtons() {
 function handleGuess(ch, btn) {
   btn.disabled = true;
   if (word.includes(ch)) {
-    for (let i = 0; i < word.length; i++) {
+    displayedWord.forEach((_, i) => {
       if (word[i] === ch) displayedWord[i] = ch;
-    }
+    });
     renderWord();
     if (!displayedWord.includes("_")) {
       messageEl.textContent = "Gratulacje! 😊";
@@ -104,6 +118,14 @@ function handleGuess(ch, btn) {
       saveGameState();
       setTimeout(initGame, 2000);
     }
+  }
+}
+
+// ---- Funkcja mieszająca tablicę ----
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 }
 
@@ -141,7 +163,6 @@ setUsernameBtn.addEventListener("click", () => {
 
 // ---- Symulacja reklamy (okienko overlay) ----
 hintBtn.addEventListener("click", () => {
-  // overlay
   const overlay = document.createElement("div");
   overlay.id = "ad-overlay";
   overlay.innerHTML = `
@@ -151,7 +172,6 @@ hintBtn.addEventListener("click", () => {
     </div>
   `;
   document.body.appendChild(overlay);
-
   document.getElementById("close-ad-btn").addEventListener("click", () => {
     document.body.removeChild(overlay);
   });
