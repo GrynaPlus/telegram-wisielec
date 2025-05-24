@@ -1,19 +1,19 @@
-// ======= Wisielec z Google Sheets + Reklamy (oryginalny kod) =======
+// ======= Gra Wisielec + Google Sheets + Reklamy =======
 
-// ---- Google Sheets Integration ----
-const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
+// ---- Konfiguracja Google Sheets ----
+const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09.../exec";
 let userName = localStorage.getItem("userName") || "";
 
 // ---- Globalne zmienne gry ----
 let word = "";
 let displayedWord = [];
 let wrongGuesses = 0;
-const maxWrong = 3; // 3 błędy = przegrana
-let questionCount = parseInt(localStorage.getItem("questionCount"), 10) || 0;
+const maxWrong = 3;
+let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
 const maxLevel = 10;
-let currentLevel = Math.floor(questionCount / 100) + 1;
+let currentLevel = Math.floor(questionCount/100) + 1;
 
-// ---- Pobieranie elementów DOM ----
+// ---- Pobranie elementów DOM ----
 const wordContainerEl   = document.getElementById("word-container");
 const lettersContainerEl= document.getElementById("letters-container");
 const messageEl         = document.getElementById("message");
@@ -28,7 +28,7 @@ const usernameContainerEl = document.getElementById("username-container");
 const progressBar       = document.querySelector(".progress-bar");
 const circumference     = 2 * Math.PI * 45;
 
-// ---- Funkcja wysyłająca do Sheets ----
+// ---- Funkcja wysyłki danych ----
 function sendUserData() {
   const data = new URLSearchParams();
   data.append("username", userName);
@@ -38,43 +38,43 @@ function sendUserData() {
     .catch(e=>console.error("❌ Sheets ERR",e));
 }
 
-// ---- Zapis stanu gry ----
+// ---- Zapis / odczyt stanu gry ----
 function saveGameState() {
   localStorage.setItem("questionCount", questionCount);
 }
 window.addEventListener("beforeunload", saveGameState);
 
-// ---- Wczytanie słów ----
+// ---- Wczytywanie słów ----
 async function loadWords() {
   try {
     const r = await fetch("words.json");
     if (!r.ok) throw "";
     return (await r.json()).levels;
   } catch {
-    console.error("Nie udało się wczytać words.json");
+    console.error("Błąd przy fetch words.json");
     return [];
   }
 }
 
 // ---- Wybór słowa sekwencyjnie ----
-function chooseSequentialWord(levels, qCount) {
-  const lvl = Math.floor(qCount/100)+1;
-  const idx = qCount % 100;
+function chooseSequentialWord(levels, q) {
+  const lvl = Math.floor(q/100)+1;
+  const idx = q % 100;
   const obj = levels.find(l=>l.level===lvl) || levels[0];
-  return (obj.words[idx]||obj.words[obj.words.length-1]).toLowerCase();
+  return (obj.words[idx]||obj.words.slice(-1)[0]).toLowerCase();
 }
 
-// ---- Reset + Update progres bar ----
+// ---- Progress bar ----
 function resetProgress() {
   wrongGuesses = 0;
   progressBar.style.strokeDashoffset = circumference;
 }
 function updateProgressBar() {
-  const offset = circumference*(1 - (wrongGuesses/maxWrong));
-  progressBar.style.strokeDashoffset = offset;
+  progressBar.style.strokeDashoffset =
+    circumference*(1 - wrongGuesses/maxWrong);
 }
 
-// ---- Update wyświetlania słowa i poziomu ----
+// ---- Render, level display ----
 function updateDisplayedWord() {
   wordContainerEl.textContent = displayedWord.join(" ");
 }
@@ -85,16 +85,16 @@ function updateLevelDisplay() {
   sendUserData();
 }
 
-// ---- Obsługa liter ----
+// ---- Obsługa liter i reklamy ----
 function disableAllLetterButtons() {
   document.querySelectorAll(".letter-btn").forEach(b=>b.disabled=true);
 }
 function handleLetterClick(e) {
   const btn = e.target;
-  const ch = btn.textContent.toLowerCase();
+  const ch = btn.textContent;
   btn.disabled = true;
   if (word.includes(ch)) {
-    for (let i=0;i<word.length;i++) if(word[i]===ch) displayedWord[i]=ch;
+    for(let i=0;i<word.length;i++) if(word[i]===ch) displayedWord[i]=ch;
     updateDisplayedWord();
     checkWin();
   } else {
@@ -104,16 +104,17 @@ function handleLetterClick(e) {
   }
 }
 
-// ---- Win/Loss + reklamy ----
+// ---- Win / Loss ----
 function checkWin() {
   if (!displayedWord.includes("_")) {
-    messageEl.textContent = `Gratulacje, ${userName||"graczu"}! Wygrałeś!`;
+    messageEl.textContent = `Gratulacje, ${userName||"graczu"}!`;
     disableAllLetterButtons();
     setTimeout(()=>{
       questionCount++; saveGameState(); updateLevelDisplay();
+      // in-app ad co 3 pytania
       if (questionCount%3===0) show_9373354({type:'inApp',inAppSettings:{frequency:1,capping:0,interval:120,timeout:1,everyPage:false}});
-      if(questionCount>=100*maxLevel) {
-        messageEl.textContent="Brawo! Ukończyłeś wszystkie pytania!";
+      if (questionCount>=100*maxLevel) {
+        messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
       } else initGame();
     },2000);
   }
@@ -126,21 +127,21 @@ function checkLoss() {
   }
 }
 
-// ---- Podpowiedź Rewarded ----
+// ---- Rewarded hint ----
 function revealHint() {
-  for(let i=0;i<word.length;i++) if(displayedWord[i]==="_"){
-    displayedWord[i]=word[i]; updateDisplayedWord(); break;
+  for(let i=0;i<word.length;i++){
+    if(displayedWord[i]==="_"){ displayedWord[i]=word[i]; updateDisplayedWord(); break; }
   }
   checkWin();
 }
 function handleHintClick() {
-  if(displayedWord.includes("_")) {
-    show_9373354();
+  if (displayedWord.includes("_")) {
+    show_9373354(); // Rewarded
     revealHint();
   }
 }
 
-// ---- Mieszanie tablicy ----
+// ---- Shuffle helper ----
 function shuffleArray(a) {
   for(let i=a.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
@@ -149,24 +150,23 @@ function shuffleArray(a) {
   return a;
 }
 
-// ---- Tworzenie przycisków liter z ograniczeniem dla ≤5 ----
+// ---- Create letter buttons (≤5 letters → 5 distractors) ----
 function createLetterButtons() {
   lettersContainerEl.innerHTML="";
   const extAlpha = "abcdefghijklmnopqrstuvwxyząćęłńóśźż".split("");
-  const correctSet = new Set(word.split("").filter(c=>/[a-ząćęłńóśźż]/i.test(c)).map(c=>c.toLowerCase()));
+  const correct = Array.from(new Set(word.split("").filter(c=>/[a-ząćęłńóśźż]/i.test(c)).map(c=>c)));
   let choices;
   if (word.length<=5) {
-    const uniq = Array.from(correctSet);
-    const pool = extAlpha.filter(c=>!correctSet.has(c));
+    const pool = extAlpha.filter(c=>!correct.includes(c));
     shuffleArray(pool);
-    choices = shuffleArray(uniq.concat(pool.slice(0, Math.min(5,pool.length))));
+    choices = shuffleArray([...correct, ...pool.slice(0,5)]);
   } else {
     choices = extAlpha;
   }
   choices.forEach(ch=>{
     const b=document.createElement("button");
     b.textContent=ch; b.className="letter-btn";
-    b.disabled=displayedWord.includes(ch)||wrongGuesses>=maxWrong;
+    b.disabled = wrongGuesses>=maxWrong;
     b.addEventListener("click",handleLetterClick);
     lettersContainerEl.appendChild(b);
   });
@@ -178,16 +178,29 @@ if (userName) {
   usernameContainerEl.style.display="none";
 }
 setUsernameBtn.addEventListener("click",()=>{
-  const v=usernameInputEl.value.trim();
-  if(!v) return;
+  const v = usernameInputEl.value.trim();
+  if (!v) return;
   userName=v; localStorage.setItem("userName",v);
   usernameDisplayEl.textContent=`Witaj, ${userName}!`;
   usernameContainerEl.style.display="none";
+  initGame(); sendUserData();
 });
 
-// ---- Rozszerzenie Telegram SDK ----
+// ---- Telegram WebApp expand ----
 window.Telegram.WebApp.expand();
 
+// ---- Podpowiedź event ----
+hintBtn.addEventListener("click", handleHintClick);
+
 // ---- Inicjalizacja gry ----
-hintBtn.addEventListener("click",handleHintClick);
+async function initGame() {
+  resetProgress(); messageEl.textContent="";
+  updateLevelDisplay();
+  const levels = await loadWords();
+  word = chooseSequentialWord(levels, questionCount);
+  console.log("Wybrane słowo (lvl "+currentLevel+"):",word);
+  displayedWord = word.split("").map(c=>/[a-ząćęłńóśźż]/i.test(c)?"_":c);
+  updateDisplayedWord();
+  createLetterButtons();
+}
 initGame();
