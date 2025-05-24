@@ -1,51 +1,17 @@
 
-let username = '';
-let currentLevel = 1;
-
-window.onload = () => {
-  const savedUsername = localStorage.getItem("username");
-  if (savedUsername) {
-    username = savedUsername;
-    document.getElementById("username-display").innerText = "Grasz jako: " + username;
-    document.getElementById("username-input").value = username;
-  }
-
-  const savedLevel = parseInt(localStorage.getItem("level")) || 1;
-  currentLevel = savedLevel;
-  document.getElementById("level-display").innerText = "Poziom: " + currentLevel;
-
-  initGame();
-};
-
-document.getElementById("set-username-btn").addEventListener("click", () => {
-  const input = document.getElementById("username-input").value.trim();
-  if (input.length > 0) {
-    username = input;
-    document.getElementById("username-display").innerText = "Grasz jako: " + username;
-    localStorage.setItem("username", username);
-    sendUserData(); // wysyłanie do Google Sheets
-    initGame(); // uruchomienie gry po ustawieniu nazwy
-  }
-});
-
-function saveLevel(level) {
-  sendUserData(); // automatyczne wysłanie danych po aktualizacji poziomu
-  currentLevel = level;
-  localStorage.setItem("level", level);
-  document.getElementById("level-display").innerText = "Poziom: " + level;
-}
-
+// ===== Wysyłanie danych do Google Sheets =====
 function sendUserData() {
   fetch("https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec", {
     method: "POST",
     body: JSON.stringify({
-      username: username,
+      username: userName,
       level: currentLevel
     }),
     headers: {
       "Content-Type": "application/json"
     }
-  }).then(res => console.log("Dane wysłane:", res.status));
+  }).then(res => console.log("Wysłano dane:", res.status))
+  .catch(err => console.error("Błąd wysyłki do Sheets:", err));
 }
 
 
@@ -57,7 +23,7 @@ const maxWrong = 3; // Użytkownik przegrywa po 3 błędach
 let userName = "";
 let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
-currentLevel = Math.floor(questionCount / 100) + 1;
+let currentLevel = Math.floor(questionCount / 100) + 1;
 
 // Pobieranie elementów DOM
 const wordContainerEl = document.getElementById("word-container");
@@ -89,10 +55,13 @@ setUsernameBtn.addEventListener("click", function () {
     usernameDisplayEl.textContent = "Witaj, " + userName + "!";
     usernameContainerEl.style.display = "none";
   }
-});
+
+    // wysyłamy dane do Google Sheets
+    sendUserData();});
 
 // Aktualizacja wyświetlania poziomu oraz numeru pytania w danym poziomie
 function updateLevelDisplay() {
+  sendUserData(); // wysyłka po zmianie poziomu
   currentLevel = Math.floor(questionCount / 100) + 1;
   const questionInLevel = (questionCount % 100) + 1;
   levelDisplayEl.textContent = "Poziom: " + currentLevel + " (" + questionInLevel + "/100)";
@@ -298,7 +267,7 @@ function showRewardedAd(callback) {
 }
 
 // Inicjalizacja gry
-async async function initGame() {
+async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
 
