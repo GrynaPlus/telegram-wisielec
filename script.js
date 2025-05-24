@@ -24,6 +24,7 @@ document.getElementById("set-username-btn").addEventListener("click", () => {
     document.getElementById("username-display").innerText = "Grasz jako: " + username;
     localStorage.setItem("username", username);
     sendUserData(); // wysyłanie do Google Sheets
+    initGame(); // uruchomienie gry po ustawieniu nazwy
   }
 });
 
