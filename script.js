@@ -139,18 +139,18 @@ function checkWin() {
       saveGameState();
       updateLevelDisplay();
 
-      // Reklama po każdych 3 pytaniach
+      // Wyświetl reklamę co każde 3 pytania
       if (questionCount % 3 === 0) {
-   show_9373354({
-  type: 'inApp',
-  inAppSettings: {
-    frequency: 1,
-    capping: 0,
-    interval: 30,
-    timeout: 1,
-    everyPage: false
-  }
-});
+        show_9373354({
+          type: 'inApp',
+          inAppSettings: {
+            frequency: 1,
+            capping: 0,
+            interval: 30,
+            timeout: 1,
+            everyPage: false
+          }
+        });
       }
 
       if (questionCount >= 100 * maxLevel) {
