@@ -298,7 +298,7 @@ function showRewardedAd(callback) {
 }
 
 // Inicjalizacja gry
-async function initGame() {
+async async function initGame() {
   wrongGuesses = 0;
   messageEl.textContent = "";
 
