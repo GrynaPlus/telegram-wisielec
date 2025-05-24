@@ -14,29 +14,30 @@ const maxLevel = 10;
 let currentLevel = Math.floor(questionCount/100) + 1;
 
 // ---- Pobranie elementów DOM ----
-const wordContainerEl   = document.getElementById("word-container");
-const lettersContainerEl= document.getElementById("letters-container");
-const messageEl         = document.getElementById("message");
-const hintBtn           = document.getElementById("hint-btn");
-const levelDisplayEl    = document.getElementById("level-display");
+const wordContainerEl    = document.getElementById("word-container");
+const lettersContainerEl = document.getElementById("letters-container");
+const messageEl          = document.getElementById("message");
+const hintBtn            = document.getElementById("hint-btn");
+const levelDisplayEl     = document.getElementById("level-display");
 
-const usernameInputEl   = document.getElementById("username-input");
-const setUsernameBtn    = document.getElementById("set-username-btn");
-const usernameDisplayEl = document.getElementById("username-display");
-const usernameContainerEl = document.getElementById("username-container");
+const usernameInputEl    = document.getElementById("username-input");
+const setUsernameBtn     = document.getElementById("set-username-btn");
+const usernameDisplayEl  = document.getElementById("username-display");
+const usernameContainerEl= document.getElementById("username-container");
 
-const progressBar       = document.querySelector(".progress-bar");
-const circumference     = 2 * Math.PI * 45;
+const progressBar        = document.querySelector(".progress-bar");
+const circumference      = 2 * Math.PI * 45;
 
 // ---- Funkcja wysyłki danych ----
 function sendUserData() {
   const data = new URLSearchParams();
   data.append("username", userName);
-  data.append("level", currentLevel);
+  data.append("question", questionCount);  // numer pytania
+  data.append("level", currentLevel);      // poziom
 
   fetch(G_SHEETS_URL, {
     method: "POST",
-    mode: "no-cors",           // <- usuwa blokadę CORS
+    mode: "no-cors",
     body: data
   })
   .then(() => console.log("✅ Dane wysłane do Sheets"))
@@ -76,7 +77,7 @@ function resetProgress() {
 }
 function updateProgressBar() {
   progressBar.style.strokeDashoffset =
-    circumference*(1 - wrongGuesses/maxWrong);
+    circumference * (1 - wrongGuesses / maxWrong);
 }
 
 // ---- Render, level display ----
@@ -84,10 +85,10 @@ function updateDisplayedWord() {
   wordContainerEl.textContent = displayedWord.join(" ");
 }
 function updateLevelDisplay() {
-  currentLevel = Math.floor(questionCount/100)+1;
-  const inLvl = (questionCount%100)+1;
+  currentLevel = Math.floor(questionCount/100) + 1;
+  const inLvl = (questionCount % 100) + 1;
   levelDisplayEl.textContent = `Poziom: ${currentLevel} (${inLvl}/100)`;
-  sendUserData();
+  // **Usunięte wywołanie sendUserData() stąd**
 }
 
 // ---- Obsługa liter i reklamy ----
@@ -99,7 +100,9 @@ function handleLetterClick(e) {
   const ch = btn.textContent;
   btn.disabled = true;
   if (word.includes(ch)) {
-    for(let i=0;i<word.length;i++) if(word[i]===ch) displayedWord[i]=ch;
+    for (let i = 0; i < word.length; i++) {
+      if (word[i] === ch) displayedWord[i] = ch;
+    }
     updateDisplayedWord();
     checkWin();
   } else {
@@ -114,28 +117,46 @@ function checkWin() {
   if (!displayedWord.includes("_")) {
     messageEl.textContent = `Gratulacje, ${userName||"graczu"}!`;
     disableAllLetterButtons();
-    setTimeout(()=>{
-      questionCount++; saveGameState(); updateLevelDisplay();
-      // in-app ad co 3 pytania
-      if (questionCount%3===0) show_9373354({type:'inApp',inAppSettings:{frequency:1,capping:0,interval:120,timeout:1,everyPage:false}});
-      if (questionCount>=100*maxLevel) {
+
+    setTimeout(() => {
+      // Tylko przy poprawnej odpowiedzi:
+      questionCount++;
+      saveGameState();
+      updateLevelDisplay();
+      sendUserData();   // <-- tutaj wysyłamy numer pytania i poziom
+
+      // Reklama co 3 pytania
+      if (questionCount % 3 === 0) {
+        show_9373354({
+          type: 'inApp',
+          inAppSettings: { frequency:1, capping:0, interval:120, timeout:1, everyPage:false }
+        });
+      }
+
+      if (questionCount >= 100 * maxLevel) {
         messageEl.textContent = "Brawo! Ukończyłeś wszystkie pytania!";
-      } else initGame();
-    },2000);
+      } else {
+        initGame();
+      }
+    }, 2000);
   }
 }
 function checkLoss() {
-  if (wrongGuesses>=maxWrong) {
+  if (wrongGuesses >= maxWrong) {
     disableAllLetterButtons();
-    messageEl.textContent="Przegrałeś!";
-    setTimeout(initGame,2000);
+    messageEl.textContent = "Przegrałeś!";
+    setTimeout(initGame, 2000);
   }
 }
 
 // ---- Rewarded hint ----
 function revealHint() {
-  for(let i=0;i<word.length;i++){
-    if(displayedWord[i]==="_"){ displayedWord[i]=word[i]; updateDisplayedWord(); break; }
+  for (let i=0; i<word.length; i++) {
+    if (displayedWord[i] === "_") {
+      displayedWord[i] = word[i];
+      updateDisplayedWord();
+      break;
+    }
   }
   checkWin();
 }
@@ -148,47 +169,54 @@ function handleHintClick() {
 
 // ---- Shuffle helper ----
 function shuffleArray(a) {
-  for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
+  for (let i = a.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
-// ---- Create letter buttons (≤5 letters → 5 distractors) ----
+// ---- Create letter buttons ----
 function createLetterButtons() {
-  lettersContainerEl.innerHTML="";
+  lettersContainerEl.innerHTML = "";
   const extAlpha = "abcdefghijklmnopqrstuvwxyząćęłńóśźż".split("");
-  const correct = Array.from(new Set(word.split("").filter(c=>/[a-ząćęłńóśźż]/i.test(c)).map(c=>c)));
+  const correct = Array.from(new Set(
+    word.split("")
+        .filter(c=>/[a-ząćęłńóśźż]/i.test(c))
+        .map(c=>c)
+  ));
   let choices;
-  if (word.length<=5) {
+  if (word.length <= 5) {
     const pool = extAlpha.filter(c=>!correct.includes(c));
     shuffleArray(pool);
     choices = shuffleArray([...correct, ...pool.slice(0,5)]);
   } else {
     choices = extAlpha;
   }
-  choices.forEach(ch=>{
-    const b=document.createElement("button");
-    b.textContent=ch; b.className="letter-btn";
-    b.disabled = wrongGuesses>=maxWrong;
-    b.addEventListener("click",handleLetterClick);
+  choices.forEach(ch => {
+    const b = document.createElement("button");
+    b.textContent = ch;
+    b.className = "letter-btn";
+    b.disabled = wrongGuesses >= maxWrong;
+    b.addEventListener("click", handleLetterClick);
     lettersContainerEl.appendChild(b);
   });
 }
 
 // ---- Obsługa nazwy użytkownika ----
 if (userName) {
-  usernameDisplayEl.textContent=`Witaj, ${userName}!`;
-  usernameContainerEl.style.display="none";
+  usernameDisplayEl.textContent = `Witaj, ${userName}!`;
+  usernameContainerEl.style.display = "none";
 }
-setUsernameBtn.addEventListener("click",()=>{
+setUsernameBtn.addEventListener("click", () => {
   const v = usernameInputEl.value.trim();
   if (!v) return;
-  userName=v; localStorage.setItem("userName",v);
-  usernameDisplayEl.textContent=`Witaj, ${userName}!`;
-  usernameContainerEl.style.display="none";
-  initGame(); sendUserData();
+  userName = v;
+  localStorage.setItem("userName", v);
+  usernameDisplayEl.textContent = `Witaj, ${userName}!`;
+  usernameContainerEl.style.display = "none";
+  initGame();
+  sendUserData();  // możesz też wysłać przy pierwszym uruchomieniu
 });
 
 // ---- Telegram WebApp expand ----
@@ -199,12 +227,13 @@ hintBtn.addEventListener("click", handleHintClick);
 
 // ---- Inicjalizacja gry ----
 async function initGame() {
-  resetProgress(); messageEl.textContent="";
+  resetProgress();
+  messageEl.textContent = "";
   updateLevelDisplay();
   const levels = await loadWords();
   word = chooseSequentialWord(levels, questionCount);
-  console.log("Wybrane słowo (lvl "+currentLevel+"):",word);
-  displayedWord = word.split("").map(c=>/[a-ząćęłńóśźż]/i.test(c)?"_":c);
+  console.log("Wybrane słowo (lvl "+currentLevel+"):", word);
+  displayedWord = word.split("").map(c=>/[a-ząćęłńóśźż]/i.test(c) ? "_" : c);
   updateDisplayedWord();
   createLetterButtons();
 }
