@@ -140,10 +140,7 @@ function checkWin() {
         show_9373354({ 
           type: 'inApp', 
           inAppSettings: { 
-            frequency: 1, 
-            capping: 0, 
-            interval: fslse, 
-            timeout: 1, 
+            timeout: 0, 
             everyPage: false 
           } 
         });
