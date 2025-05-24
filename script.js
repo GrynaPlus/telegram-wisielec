@@ -129,7 +129,7 @@ function checkWin() {
       if (questionCount % 3 === 0) {
         show_9373354({
           type: 'inApp',
-          inAppSettings: { frequency:1, capping:0, interval:120, timeout:1, everyPage:false }
+          inAppSettings: { frequency:1, capping:0, interval:150, timeout:1, everyPage:false }
         });
       }
 
