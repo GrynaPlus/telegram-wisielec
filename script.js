@@ -7,6 +7,7 @@ let userName = "";
 let questionCount = 0; // Numer bieżącego pytania
 const maxLevel = 10;
 let currentLevel = Math.floor(questionCount / 100) + 1;
+let adShownThisQuestion = false; // Flaga kontrolująca reklamę
 
 // Pobieranie elementów DOM
 const wordContainerEl = document.getElementById("word-container");
@@ -31,7 +32,7 @@ if (localStorage.getItem("userName")) {
 }
 
 // Ustawienie nazwy użytkownika
-setUsernameBtn.addEventListener("click", function() {
+setUsernameBtn.addEventListener("click", function () {
   userName = usernameInputEl.value.trim();
   if (userName !== "") {
     localStorage.setItem("userName", userName);
@@ -135,18 +136,16 @@ function checkWin() {
     disableAllLetterButtons();
 
     setTimeout(() => {
-      // Reklama co 3 pytania (przed inkrementacją questionCount)
-      if ((questionCount + 1) % 3 === 0) {
+      // Reklama co 3 pytania (tylko raz na pytanie)
+      if ((questionCount + 1) % 3 === 0 && !adShownThisQuestion) {
+        adShownThisQuestion = true;
         show_9373354({
-  type: 'inApp',
-  inAppSettings: {
-    frequency: 0,
-    capping: 0,
-    interval: 0,
-    timeout: 0,
-    everyPage: false
-  }
-});
+          type: 'inApp',
+          inAppSettings: {
+            timeout: 0,
+            everyPage: false
+          }
+        });
       }
 
       questionCount++;
@@ -242,17 +241,13 @@ function handleHintClick() {
 
 function showRewardedAd(callback) {
   console.log("Pokazuję reklamę Rewarded...");
-  show_9373354().then(() => {
-    console.log("Reklama Rewarded zakończona, przyznajemy nagrodę");
-    if (callback) callback();
-  }).catch((err) => {
-    console.warn("Błąd ładowania reklamy Rewarded:", err);
-    alert("Nie udało się załadować reklamy. Spróbuj ponownie później.");
-  });
+  show_9373354();
+  if (callback) callback();
 }
 
 // Inicjalizacja gry
 async function initGame() {
+  adShownThisQuestion = false; // Reset flagi reklamy
   wrongGuesses = 0;
   messageEl.textContent = "";
 
