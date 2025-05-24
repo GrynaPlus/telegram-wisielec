@@ -1,5 +1,3 @@
-// ======= Gra Wisielec + Google Sheets + Reklamy =======
-
 // ---- Konfiguracja Google Sheets ----
 const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
 let userName = localStorage.getItem("userName") || "";
@@ -32,8 +30,8 @@ const circumference      = 2 * Math.PI * 45;
 function sendUserData() {
   const data = new URLSearchParams();
   data.append("username", userName);
-  data.append("question", questionCount);  // numer pytania
-  data.append("level", currentLevel);      // poziom
+  data.append("question", questionCount);
+  data.append("level", currentLevel);
 
   fetch(G_SHEETS_URL, {
     method: "POST",
@@ -88,7 +86,6 @@ function updateLevelDisplay() {
   currentLevel = Math.floor(questionCount/100) + 1;
   const inLvl = (questionCount % 100) + 1;
   levelDisplayEl.textContent = `Poziom: ${currentLevel} (${inLvl}/100)`;
-  // **Usunięte wywołanie sendUserData() stąd**
 }
 
 // ---- Obsługa liter i reklamy ----
@@ -119,13 +116,11 @@ function checkWin() {
     disableAllLetterButtons();
 
     setTimeout(() => {
-      // Tylko przy poprawnej odpowiedzi:
       questionCount++;
       saveGameState();
       updateLevelDisplay();
-      sendUserData();   // <-- tutaj wysyłamy numer pytania i poziom
+      sendUserData();
 
-      // Reklama co 3 pytania
       if (questionCount % 3 === 0) {
         show_9373354({
           type: 'inApp',
@@ -176,23 +171,24 @@ function shuffleArray(a) {
   return a;
 }
 
-// ---- Create letter buttons ----
+// ---- ✅ Poprawiona funkcja: Create letter buttons ----
 function createLetterButtons() {
   lettersContainerEl.innerHTML = "";
   const extAlpha = "abcdefghijklmnopqrstuvwxyząćęłńóśźż".split("");
+
   const correct = Array.from(new Set(
     word.split("")
         .filter(c=>/[a-ząćęłńóśźż]/i.test(c))
         .map(c=>c)
   ));
-  let choices;
-  if (word.length <= 5) {
-    const pool = extAlpha.filter(c=>!correct.includes(c));
-    shuffleArray(pool);
-    choices = shuffleArray([...correct, ...pool.slice(0,5)]);
-  } else {
-    choices = extAlpha;
-  }
+
+  const pool = extAlpha.filter(c => !correct.includes(c));
+  shuffleArray(pool);
+
+  const extraLetters = pool.slice(0, Math.max(5, Math.min(pool.length, word.length + 5 - correct.length)));
+
+  const choices = shuffleArray([...correct, ...extraLetters]);
+
   choices.forEach(ch => {
     const b = document.createElement("button");
     b.textContent = ch;
@@ -216,7 +212,7 @@ setUsernameBtn.addEventListener("click", () => {
   usernameDisplayEl.textContent = `Witaj, ${userName}!`;
   usernameContainerEl.style.display = "none";
   initGame();
-  sendUserData();  // możesz też wysłać przy pierwszym uruchomieniu
+  sendUserData();
 });
 
 // ---- Telegram WebApp expand ----
