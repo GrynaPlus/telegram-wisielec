@@ -299,6 +299,7 @@ function showRewardedAd(callback) {
 
 // Inicjalizacja gry
 async async function initGame() {
+  console.log('[DEBUG] initGame started');
   wrongGuesses = 0;
   messageEl.textContent = "";
 
@@ -306,6 +307,7 @@ async async function initGame() {
   updateLevelDisplay();
 
   const levels = await loadWords();
+  console.log('[DEBUG] levels loaded:', levels);
   word = chooseSequentialWord(levels, questionCount);
   console.log("Wybrane słowo (poziom " + currentLevel + "):", word);
 
