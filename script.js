@@ -1,7 +1,7 @@
 // ======= Gra Wisielec + Google Sheets + Reklamy =======
 
 // ---- Konfiguracja Google Sheets ----
-const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09.../exec";
+const G_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzDoaaL9n09D9vS1lUmc1EJsYFhFhOgO3PyusYjLyW4aXhkAfGm4Au-nJdJnARka216/exec";
 let userName = localStorage.getItem("userName") || "";
 
 // ---- Globalne zmienne gry ----
@@ -33,9 +33,14 @@ function sendUserData() {
   const data = new URLSearchParams();
   data.append("username", userName);
   data.append("level", currentLevel);
-  fetch(G_SHEETS_URL, { method: "POST", body: data })
-    .then(()=>console.log("✅ Sheets OK"))
-    .catch(e=>console.error("❌ Sheets ERR",e));
+
+  fetch(G_SHEETS_URL, {
+    method: "POST",
+    mode: "no-cors",           // <- usuwa blokadę CORS
+    body: data
+  })
+  .then(() => console.log("✅ Dane wysłane do Sheets"))
+  .catch(err => console.error("❌ Błąd wysyłki:", err));
 }
 
 // ---- Zapis / odczyt stanu gry ----
